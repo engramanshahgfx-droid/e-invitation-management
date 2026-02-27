@@ -1,0 +1,1 @@
+This will install dependencies and start the development server. Let me know once Node.js is installed, or if you need help with the installation
