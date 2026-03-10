@@ -291,3 +291,5 @@
     popular: 'الأكثر شيوعًا',
   },
 }
+
+export default ar;

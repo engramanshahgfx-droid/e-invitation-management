@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function Home() {
-  redirect('/event-management-dashboard');
+export default function RootPage() {
+  redirect('/en');
 }

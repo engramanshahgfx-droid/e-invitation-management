@@ -1,9 +1,32 @@
-import createMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 
-export default createMiddleware({
+const intlMiddleware = createIntlMiddleware({
   locales: ['en', 'ar'],
-  defaultLocale: 'en'
+  defaultLocale: 'en',
+  localePrefix: 'always',
 });
+
+// Pages accessible without authentication
+const publicPages = [
+  '/',
+  '/auth/login',
+  '/auth/register',
+  '/pricing',
+  '/demo-preview',
+];
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Redirect root to default locale
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/en', request.url));
+  }
+  
+  return intlMiddleware(request);
+}
+
 export const config = {
-  matcher: ['/', '/(ar|en)/:path*']
+  matcher: ['/', '/(en|ar)/:path*']
 };

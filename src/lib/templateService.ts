@@ -1,3 +1,4 @@
+import { getCurrentUser } from './auth';
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { InvitationTemplate, InsertTables, UpdateTables } from '@/types/database';
 
@@ -27,6 +28,13 @@ export interface SavedTemplate extends TemplateData {
   createdAt: string;
   updatedAt: string;
 }
+
+type InvitationTemplateInsert = InsertTables<'invitation_templates'>;
+type InvitationTemplateUpdate = UpdateTables<'invitation_templates'>;
+type InvitationTemplateMutation = Pick<
+  InvitationTemplateUpdate,
+  'language' | 'header_image' | 'title' | 'title_ar' | 'message' | 'message_ar' | 'footer_text' | 'footer_text_ar' | 'is_active'
+>;
 
 // Default template for new events
 export const defaultTemplate: TemplateData = {
@@ -82,7 +90,7 @@ export const templateService = {
       }
 
       if (data) {
-        return transformFromDb(data);
+        return transformFromDb(data as any);
       }
     }
 
@@ -107,13 +115,17 @@ export const templateService = {
         .eq('is_active', true)
         .single();
 
-      const dbData = transformToDb(eventId, template);
+      const dbData = transformToDb(template);
 
       if (existing) {
         // Update existing template
+        const updateData: InvitationTemplateUpdate = {
+          ...dbData,
+        };
+
         const { data, error } = await supabase
           .from('invitation_templates')
-          .update(dbData)
+          .update(updateData)
           .eq('id', existing.id)
           .select()
           .single();
@@ -122,15 +134,24 @@ export const templateService = {
           return { success: false, error: error.message };
         }
 
-        return { success: true, data: transformFromDb(data) };
+        return { success: true, data: transformFromDb(data as any) };
       } else {
         // Insert new template
+        const currentUser = await getCurrentUser();
+
+        if (!currentUser?.id) {
+          return { success: false, error: 'User not authenticated' };
+        }
+
+        const insertData: InvitationTemplateInsert = {
+          event_id: eventId,
+          user_id: currentUser.id,
+          ...dbData,
+        };
+
         const { data, error } = await supabase
           .from('invitation_templates')
-          .insert({
-            ...dbData,
-            event_id: eventId,
-          })
+          .insert(insertData)
           .select()
           .single();
 
@@ -138,7 +159,7 @@ export const templateService = {
           return { success: false, error: error.message };
         }
 
-        return { success: true, data: transformFromDb(data) };
+        return { success: true, data: transformFromDb(data as any) };
       }
     }
 
@@ -200,7 +221,7 @@ export const templateService = {
         return [];
       }
 
-      return data.map(transformFromDb);
+      return (data as any[]).map(transformFromDb);
     }
 
     // Return localStorage templates as array
@@ -236,7 +257,7 @@ function transformFromDb(row: InvitationTemplate): SavedTemplate {
 }
 
 // Transform frontend format to database row
-function transformToDb(eventId: string, template: TemplateData): Partial<InsertTables<'invitation_templates'>> {
+function transformToDb(template: TemplateData): InvitationTemplateMutation {
   return {
     language: template.language,
     header_image: template.headerImage,

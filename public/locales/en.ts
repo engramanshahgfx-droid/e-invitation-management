@@ -305,6 +305,5 @@ export const en = {
   "FounderParagraph3": "Choosing SuperHotel means benefiting from reliable and secure services, backed by Atrujah Al-Hijaz Company's experience in the hospitality and hotel booking sector. Whether you're planning a religious or tourist trip, Bedinroom is your best choice to ensure a comfortable and safe stay, with reliable services and continuous support from our outstanding team, at unbeatable prices."
 
 }
-  
 
-
+export default en;
