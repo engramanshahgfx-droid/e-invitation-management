@@ -1,14 +1,14 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
-export default function FeaturesPage({ params }: { params: { locale: string } }) {
+export default async function FeaturesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="mx-auto max-w-7xl px-6 py-20 text-center">
         <h1 className="text-5xl font-bold text-gray-900">Powerful Features</h1>
-        <p className="mt-4 text-xl text-gray-600">
-          Everything you need to manage invitations effortlessly
-        </p>
+        <p className="mt-4 text-xl text-gray-600">Everything you need to manage invitations effortlessly</p>
       </div>
 
       {/* Features Grid */}
@@ -74,11 +74,9 @@ export default function FeaturesPage({ params }: { params: { locale: string } })
       <div className="bg-blue-600 py-20">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-4xl font-bold text-white">Ready to get started?</h2>
-          <p className="mt-4 text-lg text-blue-100">
-            Create your first invitation today!
-          </p>
+          <p className="mt-4 text-lg text-blue-100">Create your first invitation today!</p>
           <Link
-            href={`/${params.locale}/auth/register`}
+            href={`/${locale}/auth/register`}
             className="mt-8 inline-block rounded-lg bg-white px-8 py-3 font-bold text-blue-600 hover:bg-blue-50"
           >
             Sign Up Free
@@ -86,5 +84,5 @@ export default function FeaturesPage({ params }: { params: { locale: string } })
         </div>
       </div>
     </div>
-  );
+  )
 }

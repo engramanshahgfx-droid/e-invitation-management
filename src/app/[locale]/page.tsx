@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth'
+import { useLocale } from 'next-intl'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 const features = [
   {
@@ -37,7 +37,7 @@ const features = [
     title: 'Secure & Reliable',
     description: 'Enterprise-grade security with Supabase and Stripe payment processing.',
   },
-];
+]
 
 const steps = [
   {
@@ -55,7 +55,7 @@ const steps = [
     title: 'Send & Track',
     description: 'Send WhatsApp invitations and track RSVPs and attendance in real-time.',
   },
-];
+]
 
 const plans = [
   {
@@ -80,54 +80,60 @@ const plans = [
     color: 'bg-purple-600',
     features: ['Unlimited Events', 'Unlimited Guests', 'Unlimited Messages', 'Priority Support', 'Custom Branding'],
   },
-];
+]
 
 export default function HomePage() {
-  const locale = useLocale();
-  const router = useRouter();
+  const locale = useLocale()
+  const router = useRouter()
 
   useEffect(() => {
     const redirectIfAuthenticated = async () => {
       try {
-        const user = await getCurrentUser();
+        const user = await getCurrentUser()
         if (user) {
-          router.replace(`/${locale}/event-management-dashboard`);
+          router.replace(`/${locale}/event-management-dashboard`)
         }
       } catch {
         // ignore unauthenticated state
       }
-    };
+    }
 
-    redirectIfAuthenticated();
-  }, [locale, router]);
+    redirectIfAuthenticated()
+  }, [locale, router])
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+      <nav className="fixed left-0 right-0 top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IF</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+                <span className="text-sm font-bold text-white">IF</span>
               </div>
               <span className="text-xl font-bold text-gray-900">InviteFlow</span>
             </div>
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#features" className="text-sm text-gray-600 hover:text-gray-900">Features</a>
-              <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900">How it Works</a>
-              <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">Pricing</a>
+            <div className="hidden items-center gap-6 md:flex">
+              <a href="#features" className="text-sm text-gray-600 hover:text-gray-900">
+                Features
+              </a>
+              <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900">
+                How it Works
+              </a>
+              <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">
+                Pricing
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <Link
                 href={`/${locale}/auth/login`}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900 px-4 py-2"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
               >
                 Sign In
               </Link>
               <Link
                 href={`/${locale}/auth/register`}
-                className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
               >
                 Create Invitation
               </Link>
@@ -137,73 +143,68 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
+      <section className="px-4 pb-20 pt-32 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-medium text-blue-700">
             ✨ Start Free — No Credit Card Required
           </div>
-          <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
-            Create Digital Invitations{' '}
-            <span className="text-blue-600">Easily</span>
+          <h1 className="mb-6 text-5xl font-extrabold leading-tight text-gray-900 sm:text-6xl">
+            Create Digital Invitations <span className="text-blue-600">Easily</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-            Manage events, send WhatsApp invitations, track RSVPs, and handle QR check-ins —
-            all from one powerful platform.
+          <p className="mx-auto mb-10 max-w-2xl text-xl text-gray-600">
+            Manage events, send WhatsApp invitations, track RSVPs, and handle QR check-ins — all from one powerful
+            platform.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href={`/${locale}/auth/register`}
-              className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center"
+              className="w-full rounded-lg bg-blue-600 px-8 py-3.5 text-center font-semibold text-white transition-colors hover:bg-blue-700 sm:w-auto"
             >
               Create Invitation →
             </Link>
             <a
               href="#how-it-works"
-              className="w-full sm:w-auto px-8 py-3.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors text-center"
+              className="w-full rounded-lg border border-gray-300 px-8 py-3.5 text-center font-semibold text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
             >
               See How it Works
             </a>
           </div>
 
           {/* Dashboard Preview */}
-          <div className="mt-16 relative">
-            <div className="bg-gradient-to-b from-gray-50 to-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
-              <div className="bg-gray-800 px-4 py-3 flex items-center gap-2">
+          <div className="relative mt-16">
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-b from-gray-50 to-white shadow-2xl">
+              <div className="flex items-center gap-2 bg-gray-800 px-4 py-3">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                  <div className="h-3 w-3 rounded-full bg-red-400" />
+                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
+                  <div className="h-3 w-3 rounded-full bg-green-400" />
                 </div>
                 <div className="flex-1 text-center">
                   <span className="text-xs text-gray-400">inviteflow.app/dashboard</span>
                 </div>
               </div>
-              <div className="p-8 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
+                <div className="mb-6 grid grid-cols-3 gap-4">
+                  <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                     <div className="text-2xl font-bold text-blue-600">248</div>
                     <div className="text-sm text-gray-500">Guests Invited</div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                     <div className="text-2xl font-bold text-green-600">186</div>
                     <div className="text-sm text-gray-500">Confirmed</div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                     <div className="text-2xl font-bold text-purple-600">142</div>
                     <div className="text-sm text-gray-500">Checked In</div>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                  <div className="h-32 flex items-end justify-around gap-2">
+                <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+                  <div className="flex h-32 items-end justify-around gap-2">
                     {[40, 65, 85, 70, 90, 75, 95].map((h, i) => (
-                      <div
-                        key={i}
-                        className="bg-blue-500 rounded-t-md w-full"
-                        style={{ height: `${h}%` }}
-                      />
+                      <div key={i} className="w-full rounded-t-md bg-blue-500" style={{ height: `${h}%` }} />
                     ))}
                   </div>
-                  <div className="text-xs text-gray-400 mt-2 text-center">Weekly Invitation Activity</div>
+                  <div className="mt-2 text-center text-xs text-gray-400">Weekly Invitation Activity</div>
                 </div>
               </div>
             </div>
@@ -212,19 +213,19 @@ export default function HomePage() {
       </section>
 
       {/* How it Works */}
-      <section id="how-it-works" className="py-20 bg-gray-50 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+      <section id="how-it-works" className="bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900">How It Works</h2>
             <p className="text-lg text-gray-600">Get started in 3 simple steps</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-3">
             {steps.map((step) => (
               <div key={step.number} className="text-center">
-                <div className="w-16 h-16 bg-blue-600 text-white text-2xl font-bold rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-2xl font-bold text-white">
                   {step.number}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
+                <h3 className="mb-3 text-xl font-semibold text-gray-900">{step.title}</h3>
                 <p className="text-gray-600">{step.description}</p>
               </div>
             ))}
@@ -233,21 +234,21 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything You Need</h2>
+      <section id="features" className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900">Everything You Need</h2>
             <p className="text-lg text-gray-600">Powerful tools to manage your events from start to finish</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow"
+                className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
               >
-                <div className="text-3xl mb-4">{feature.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
+                <div className="mb-4 text-3xl">{feature.icon}</div>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900">{feature.title}</h3>
+                <p className="text-sm text-gray-600">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -255,24 +256,22 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Preview */}
-      <section id="pricing" className="py-20 bg-gray-50 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+      <section id="pricing" className="bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h2>
             <p className="text-lg text-gray-600">Start free, upgrade when you&apos;re ready</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-3">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`bg-white rounded-xl overflow-hidden border-2 ${
-                  plan.popular ? 'border-blue-600 shadow-xl relative' : 'border-gray-200'
+                className={`overflow-hidden rounded-xl border-2 bg-white ${
+                  plan.popular ? 'relative border-blue-600 shadow-xl' : 'border-gray-200'
                 }`}
               >
                 {plan.popular && (
-                  <div className="bg-blue-600 text-white text-center text-xs font-bold py-1.5">
-                    MOST POPULAR
-                  </div>
+                  <div className="bg-blue-600 py-1.5 text-center text-xs font-bold text-white">MOST POPULAR</div>
                 )}
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
@@ -290,7 +289,7 @@ export default function HomePage() {
                   </ul>
                   <Link
                     href={`/${locale}/auth/register`}
-                    className={`mt-6 block text-center py-2.5 rounded-lg font-medium transition-colors ${
+                    className={`mt-6 block rounded-lg py-2.5 text-center font-medium transition-colors ${
                       plan.popular
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
@@ -306,17 +305,15 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to Simplify Your Event Management?
-          </h2>
-          <p className="text-lg text-gray-600 mb-8">
+      <section className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900">Ready to Simplify Your Event Management?</h2>
+          <p className="mb-8 text-lg text-gray-600">
             Join thousands of event organizers who use InviteFlow to create stunning digital invitations.
           </p>
           <Link
             href={`/${locale}/auth/register`}
-            className="inline-block px-8 py-3.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-block rounded-lg bg-blue-600 px-8 py-3.5 font-semibold text-white transition-colors hover:bg-blue-700"
           >
             Create Your Invitation →
           </Link>
@@ -325,11 +322,11 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="bg-gray-900 px-4 py-12 text-gray-400 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">IF</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+              <span className="text-sm font-bold text-white">IF</span>
             </div>
             <span className="text-lg font-bold text-white">InviteFlow</span>
           </div>
@@ -337,5 +334,5 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
-  );
+  )
 }

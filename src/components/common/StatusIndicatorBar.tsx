@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
+import { useEffect, useState } from 'react'
 
 interface StatusMetric {
-  label: string;
-  labelAr: string;
-  value: number;
-  icon: string;
-  color: 'primary' | 'success' | 'warning' | 'accent';
+  label: string
+  labelAr: string
+  value: number
+  icon: string
+  color: 'primary' | 'success' | 'warning' | 'accent'
 }
 
 interface StatusIndicatorBarProps {
-  className?: string;
+  className?: string
 }
 
 const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
@@ -45,9 +45,9 @@ const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
       icon: 'UserGroupIcon',
       color: 'accent',
     },
-  ]);
+  ])
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -56,11 +56,11 @@ const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
           ...metric,
           value: metric.value + Math.floor(Math.random() * 3),
         }))
-      );
-    }, 5000);
+      )
+    }, 5000)
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(interval)
+  }, [])
 
   const getColorClasses = (color: StatusMetric['color']) => {
     const colorMap = {
@@ -68,32 +68,32 @@ const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
       success: 'bg-success/10 text-success',
       warning: 'bg-warning/10 text-warning',
       accent: 'bg-accent/10 text-accent',
-    };
-    return colorMap[color];
-  };
+    }
+    return colorMap[color]
+  }
 
   return (
-    <div className={`bg-card border-b border-border ${className}`}>
+    <div className={`border-b border-border bg-card ${className}`}>
       <div className="px-8 py-4">
         <div className="flex items-center justify-between">
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden items-center gap-8 md:flex">
             {metrics.map((metric, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className={`p-2 rounded-md ${getColorClasses(metric.color)}`}>
+                <div className={`rounded-md p-2 ${getColorClasses(metric.color)}`}>
                   <Icon name={metric.icon as any} size={20} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary font-caption">{metric.label}</span>
-                  <span className="text-lg font-semibold text-text-primary font-mono">{metric.value}</span>
+                  <span className="font-caption text-xs text-text-secondary">{metric.label}</span>
+                  <span className="font-mono text-lg font-semibold text-text-primary">{metric.value}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="md:hidden w-full">
+          <div className="w-full md:hidden">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full flex items-center justify-between px-4 py-2 bg-muted rounded-md transition-smooth hover:bg-muted/80"
+              className="transition-smooth hover:bg-muted/80 flex w-full items-center justify-between rounded-md bg-muted px-4 py-2"
               aria-expanded={isExpanded}
               aria-label="Toggle status metrics"
             >
@@ -104,20 +104,20 @@ const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
               <Icon
                 name="ChevronDownIcon"
                 size={16}
-                className={`text-text-secondary transition-smooth ${isExpanded ? 'rotate-180' : ''}`}
+                className={`transition-smooth text-text-secondary ${isExpanded ? 'rotate-180' : ''}`}
               />
             </button>
 
             {isExpanded && (
-              <div className="mt-3 grid grid-cols-2 gap-3 animate-slide-up">
+              <div className="mt-3 grid animate-slide-up grid-cols-2 gap-3">
                 {metrics.map((metric, index) => (
-                  <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-md">
-                    <div className={`p-2 rounded-md ${getColorClasses(metric.color)}`}>
+                  <div key={index} className="flex items-center gap-2 rounded-md bg-muted p-3">
+                    <div className={`rounded-md p-2 ${getColorClasses(metric.color)}`}>
                       <Icon name={metric.icon as any} size={16} />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs text-text-secondary font-caption">{metric.label}</span>
-                      <span className="text-base font-semibold text-text-primary font-mono">{metric.value}</span>
+                      <span className="font-caption text-xs text-text-secondary">{metric.label}</span>
+                      <span className="font-mono text-base font-semibold text-text-primary">{metric.value}</span>
                     </div>
                   </div>
                 ))}
@@ -125,16 +125,16 @@ const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
             )}
           </div>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse-subtle" />
-              <span className="text-xs text-text-secondary font-caption">Live Updates</span>
+              <div className="h-2 w-2 animate-pulse-subtle rounded-full bg-success" />
+              <span className="font-caption text-xs text-text-secondary">Live Updates</span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StatusIndicatorBar;
+export default StatusIndicatorBar

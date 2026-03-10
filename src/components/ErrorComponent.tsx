@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
+import Link from 'next/link'
 
 interface ErrorComponentProps {
-  title?: string;
-  message?: string;
-  description?: string;
-  icon?: 'warning' | 'error' | 'info';
+  title?: string
+  message?: string
+  description?: string
+  icon?: 'warning' | 'error' | 'info'
   actions?: Array<{
-    label: string;
-    onClick?: () => void;
-    href?: string;
-    variant?: 'primary' | 'secondary';
-  }>;
-  showDetails?: boolean;
-  errorDetails?: string;
+    label: string
+    onClick?: () => void
+    href?: string
+    variant?: 'primary' | 'secondary'
+  }>
+  showDetails?: boolean
+  errorDetails?: string
 }
 
 export function ErrorComponent({
@@ -42,19 +42,12 @@ export function ErrorComponent({
       icon: 'text-blue-600',
       iconBg: 'bg-blue-100',
     },
-  };
+  }
 
-  const colors = iconColors[icon];
+  const colors = iconColors[icon]
 
   const iconPaths = {
-    warning: (
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 9v2m0 4v2m0 0v2m0-6v-2"
-      />
-    ),
+    warning: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4v2m0 0v2m0-6v-2" />,
     error: (
       <path
         strokeLinecap="round"
@@ -71,48 +64,33 @@ export function ErrorComponent({
         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     ),
-  };
+  }
 
   return (
-    <div className={`min-h-screen ${colors.bg} flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8`}>
-      <div className="max-w-md w-full">
+    <div className={`min-h-screen ${colors.bg} flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8`}>
+      <div className="w-full max-w-md">
         <div className="text-center">
           {/* Icon */}
-          <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full ${colors.iconBg} mb-6`}>
-            <svg
-              className={`h-8 w-8 ${colors.icon}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+          <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${colors.iconBg} mb-6`}>
+            <svg className={`h-8 w-8 ${colors.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {iconPaths[icon]}
             </svg>
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-            {title}
-          </h1>
+          <h1 className="mb-2 text-3xl font-extrabold text-gray-900">{title}</h1>
 
           {/* Message */}
-          <p className="text-lg text-gray-700 mb-2">
-            {message}
-          </p>
+          <p className="mb-2 text-lg text-gray-700">{message}</p>
 
           {/* Description */}
-          {description && (
-            <p className="text-gray-600 mb-8">
-              {description}
-            </p>
-          )}
+          {description && <p className="mb-8 text-gray-600">{description}</p>}
 
           {/* Error Details */}
           {showDetails && errorDetails && (
-            <div className="mb-8 bg-white rounded-lg p-4 text-left border border-gray-200">
-              <p className="text-xs font-semibold text-gray-600 mb-2">Error Details:</p>
-              <p className="text-sm font-mono text-gray-700 break-all">
-                {errorDetails}
-              </p>
+            <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4 text-left">
+              <p className="mb-2 text-xs font-semibold text-gray-600">Error Details:</p>
+              <p className="break-all font-mono text-sm text-gray-700">{errorDetails}</p>
             </div>
           )}
 
@@ -124,33 +102,25 @@ export function ErrorComponent({
                   action.variant === 'secondary'
                     ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
                     : icon === 'warning'
-                    ? 'bg-yellow-600 text-white hover:bg-yellow-700'
-                    : icon === 'error'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`;
+                      ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                      : icon === 'error'
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`
 
                 if (action.href) {
                   return (
-                    <Link
-                      key={index}
-                      href={action.href}
-                      className={buttonClass}
-                    >
+                    <Link key={index} href={action.href} className={buttonClass}>
                       {action.label}
                     </Link>
-                  );
+                  )
                 }
 
                 return (
-                  <button
-                    key={index}
-                    onClick={action.onClick}
-                    className={buttonClass}
-                  >
+                  <button key={index} onClick={action.onClick} className={buttonClass}>
                     {action.label}
                   </button>
-                );
+                )
               })}
             </div>
           )}
@@ -160,19 +130,19 @@ export function ErrorComponent({
             <div className="space-y-3">
               <button
                 onClick={() => window.location.reload()}
-                className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                className={`w-full rounded-lg px-4 py-2 font-medium transition-colors ${
                   icon === 'warning'
                     ? 'bg-yellow-600 text-white hover:bg-yellow-700'
                     : icon === 'error'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
                 Try Again
               </button>
               <Link
                 href="/"
-                className="block w-full bg-gray-200 text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors text-center"
+                className="block w-full rounded-lg bg-gray-200 px-4 py-2 text-center font-medium text-gray-900 transition-colors hover:bg-gray-300"
               >
                 Go Home
               </Link>
@@ -181,7 +151,7 @@ export function ErrorComponent({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Specific Error Components
@@ -191,11 +161,9 @@ export function NotFoundError() {
       title="Page Not Found"
       message="404 - This page doesn't exist"
       icon="warning"
-      actions={[
-        { label: 'Go Home', href: '/', variant: 'primary' },
-      ]}
+      actions={[{ label: 'Go Home', href: '/', variant: 'primary' }]}
     />
-  );
+  )
 }
 
 export function UnauthorizedError() {
@@ -209,7 +177,7 @@ export function UnauthorizedError() {
         { label: 'Go Home', href: '/', variant: 'secondary' },
       ]}
     />
-  );
+  )
 }
 
 export function ServerError() {
@@ -224,7 +192,7 @@ export function ServerError() {
         { label: 'Go Home', href: '/', variant: 'secondary' },
       ]}
     />
-  );
+  )
 }
 
 export function MaintenanceError() {
@@ -234,9 +202,7 @@ export function MaintenanceError() {
       message="We're temporarily down for maintenance"
       description="We'll be back online soon. Thank you for your patience!"
       icon="info"
-      actions={[
-        { label: 'Go Home', href: '/', variant: 'primary' },
-      ]}
+      actions={[{ label: 'Go Home', href: '/', variant: 'primary' }]}
     />
-  );
+  )
 }

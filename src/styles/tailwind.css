@@ -10,130 +10,130 @@
 @layer base {
   :root {
     /* Primary Colors */
-    --color-primary: #1E3A5F; /* Deep professional blue */
-    --color-primary-foreground: #FFFFFF; /* white */
-    
+    --color-primary: #1e3a5f; /* Deep professional blue */
+    --color-primary-foreground: #ffffff; /* white */
+
     /* Secondary Colors */
-    --color-secondary: #2D5A87; /* Lighter blue */
-    --color-secondary-foreground: #FFFFFF; /* white */
-    
+    --color-secondary: #2d5a87; /* Lighter blue */
+    --color-secondary-foreground: #ffffff; /* white */
+
     /* Accent Colors */
-    --color-accent: #D4A574; /* Warm gold */
-    --color-accent-foreground: #1A1A1A; /* near-black */
-    
+    --color-accent: #d4a574; /* Warm gold */
+    --color-accent-foreground: #1a1a1a; /* near-black */
+
     /* Background Colors */
-    --color-background: #FAFBFC; /* Soft off-white */
-    --color-foreground: #1A1A1A; /* near-black */
-    
+    --color-background: #fafbfc; /* Soft off-white */
+    --color-foreground: #1a1a1a; /* near-black */
+
     /* Surface Colors */
-    --color-card: #FFFFFF; /* white */
-    --color-card-foreground: #2C3E50; /* Rich dark blue-gray */
-    
+    --color-card: #ffffff; /* white */
+    --color-card-foreground: #2c3e50; /* Rich dark blue-gray */
+
     /* Popover Colors */
-    --color-popover: #FFFFFF; /* white */
-    --color-popover-foreground: #2C3E50; /* Rich dark blue-gray */
-    
+    --color-popover: #ffffff; /* white */
+    --color-popover-foreground: #2c3e50; /* Rich dark blue-gray */
+
     /* Muted Colors */
-    --color-muted: #F1F5F9; /* slate-100 */
-    --color-muted-foreground: #64748B; /* Medium gray */
-    
+    --color-muted: #f1f5f9; /* slate-100 */
+    --color-muted-foreground: #64748b; /* Medium gray */
+
     /* Destructive Colors */
-    --color-destructive: #DC2626; /* Clear red */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
+    --color-destructive: #dc2626; /* Clear red */
+    --color-destructive-foreground: #ffffff; /* white */
+
     /* Success Colors */
     --color-success: #059669; /* Professional green */
-    --color-success-foreground: #FFFFFF; /* white */
-    
+    --color-success-foreground: #ffffff; /* white */
+
     /* Warning Colors */
-    --color-warning: #D97706; /* Warm orange */
-    --color-warning-foreground: #FFFFFF; /* white */
-    
+    --color-warning: #d97706; /* Warm orange */
+    --color-warning-foreground: #ffffff; /* white */
+
     /* Error Colors */
-    --color-error: #DC2626; /* Clear red */
-    --color-error-foreground: #FFFFFF; /* white */
-    
+    --color-error: #dc2626; /* Clear red */
+    --color-error-foreground: #ffffff; /* white */
+
     /* Border and Input Colors */
     --color-border: rgba(30, 58, 95, 0.12); /* primary with opacity */
     --color-input: rgba(30, 58, 95, 0.12); /* primary with opacity */
-    --color-ring: #1E3A5F; /* Deep professional blue */
-    
+    --color-ring: #1e3a5f; /* Deep professional blue */
+
     /* Text Colors */
-    --color-text-primary: #2C3E50; /* Rich dark blue-gray */
-    --color-text-secondary: #64748B; /* Medium gray */
-    
+    --color-text-primary: #2c3e50; /* Rich dark blue-gray */
+    --color-text-secondary: #64748b; /* Medium gray */
+
     /* Border Radius */
     --radius-sm: 6px;
     --radius-md: 12px;
     --radius-lg: 18px;
     --radius-xl: 24px;
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.08);
-    --shadow-md: 0 4px 6px rgba(30, 58, 95, 0.10);
+    --shadow-md: 0 4px 6px rgba(30, 58, 95, 0.1);
     --shadow-lg: 0 10px 15px rgba(30, 58, 95, 0.12);
     --shadow-xl: 0 20px 40px -8px rgba(30, 58, 95, 0.16);
   }
 
   .dark {
     /* Primary Colors */
-    --color-primary: #4A7BA7; /* Lighter blue for dark mode */
-    --color-primary-foreground: #FFFFFF; /* white */
-    
+    --color-primary: #4a7ba7; /* Lighter blue for dark mode */
+    --color-primary-foreground: #ffffff; /* white */
+
     /* Secondary Colors */
-    --color-secondary: #5B8DB8; /* Lighter blue */
-    --color-secondary-foreground: #FFFFFF; /* white */
-    
+    --color-secondary: #5b8db8; /* Lighter blue */
+    --color-secondary-foreground: #ffffff; /* white */
+
     /* Accent Colors */
-    --color-accent: #E5B887; /* Lighter warm gold */
-    --color-accent-foreground: #0F1419; /* dark background */
-    
+    --color-accent: #e5b887; /* Lighter warm gold */
+    --color-accent-foreground: #0f1419; /* dark background */
+
     /* Background Colors */
-    --color-background: #0F1419; /* Dark background */
-    --color-foreground: #EBEBEB; /* 92% white */
-    
+    --color-background: #0f1419; /* Dark background */
+    --color-foreground: #ebebeb; /* 92% white */
+
     /* Surface Colors */
-    --color-card: #1A202C; /* Elevated dark surface */
-    --color-card-foreground: #EBEBEB; /* 92% white */
-    
+    --color-card: #1a202c; /* Elevated dark surface */
+    --color-card-foreground: #ebebeb; /* 92% white */
+
     /* Popover Colors */
-    --color-popover: #1A202C; /* Elevated dark surface */
-    --color-popover-foreground: #EBEBEB; /* 92% white */
-    
+    --color-popover: #1a202c; /* Elevated dark surface */
+    --color-popover-foreground: #ebebeb; /* 92% white */
+
     /* Muted Colors */
-    --color-muted: #2D3748; /* slate-700 */
-    --color-muted-foreground: #94A3B8; /* slate-400 */
-    
+    --color-muted: #2d3748; /* slate-700 */
+    --color-muted-foreground: #94a3b8; /* slate-400 */
+
     /* Destructive Colors */
-    --color-destructive: #EF4444; /* Lighter red for dark mode */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
+    --color-destructive: #ef4444; /* Lighter red for dark mode */
+    --color-destructive-foreground: #ffffff; /* white */
+
     /* Success Colors */
-    --color-success: #10B981; /* Lighter green for dark mode */
-    --color-success-foreground: #FFFFFF; /* white */
-    
+    --color-success: #10b981; /* Lighter green for dark mode */
+    --color-success-foreground: #ffffff; /* white */
+
     /* Warning Colors */
-    --color-warning: #F59E0B; /* Lighter orange for dark mode */
-    --color-warning-foreground: #FFFFFF; /* white */
-    
+    --color-warning: #f59e0b; /* Lighter orange for dark mode */
+    --color-warning-foreground: #ffffff; /* white */
+
     /* Error Colors */
-    --color-error: #EF4444; /* Lighter red for dark mode */
-    --color-error-foreground: #FFFFFF; /* white */
-    
+    --color-error: #ef4444; /* Lighter red for dark mode */
+    --color-error-foreground: #ffffff; /* white */
+
     /* Border and Input Colors */
     --color-border: rgba(255, 255, 255, 0.08); /* white with opacity */
     --color-input: rgba(255, 255, 255, 0.08); /* white with opacity */
-    --color-ring: #4A7BA7; /* Lighter blue for dark mode */
-    
+    --color-ring: #4a7ba7; /* Lighter blue for dark mode */
+
     /* Text Colors */
-    --color-text-primary: #EBEBEB; /* 92% white */
-    --color-text-secondary: #94A3B8; /* slate-400 */
-    
+    --color-text-primary: #ebebeb; /* 92% white */
+    --color-text-secondary: #94a3b8; /* slate-400 */
+
     /* Shadows - Warm glow effects */
     --shadow-sm: 0 1px 3px rgba(74, 123, 167, 0.15);
-    --shadow-md: 0 4px 6px rgba(74, 123, 167, 0.20);
+    --shadow-md: 0 4px 6px rgba(74, 123, 167, 0.2);
     --shadow-lg: 0 10px 15px rgba(74, 123, 167, 0.25);
-    --shadow-xl: 0 20px 40px -8px rgba(74, 123, 167, 0.30);
+    --shadow-xl: 0 20px 40px -8px rgba(74, 123, 167, 0.3);
   }
 
   * {
@@ -147,7 +147,12 @@
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Crimson Pro', serif;
   }
 
@@ -197,11 +202,10 @@
   ::-webkit-scrollbar-track {
     @apply bg-muted;
   }
-::-webkit-scrollbar-thumb  {
+  ::-webkit-scrollbar-thumb {
     @apply rounded-md;
   }
-::-webkit-scrollbar-thumb:hover  {
-    
+  ::-webkit-scrollbar-thumb:hover {
   }
 
   /* Focus styles */
@@ -232,7 +236,9 @@
   .text-mono {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.875rem;
-    font-feature-settings: 'tnum' on, 'lnum' on;
+    font-feature-settings:
+      'tnum' on,
+      'lnum' on;
   }
 
   .transition-smooth {

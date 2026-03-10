@@ -1,69 +1,69 @@
-'use client';
+'use client'
 
-import { useState, useRef } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
+import { useRef, useState } from 'react'
 
 interface FileUploadZoneProps {
-  onFileUpload: (file: File) => void;
-  isLoading?: boolean;
-  disabled?: boolean;
+  onFileUpload: (file: File) => void
+  isLoading?: boolean
+  disabled?: boolean
 }
 
 const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: FileUploadZoneProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [uploadMessage, setUploadMessage] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [uploadMessage, setUploadMessage] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
-    if (disabled || isLoading) return;
-    e.preventDefault();
-    setIsDragging(true);
-  };
+    if (disabled || isLoading) return
+    e.preventDefault()
+    setIsDragging(true)
+  }
 
   const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+    setIsDragging(false)
+  }
 
   const handleDrop = (e: React.DragEvent) => {
-    if (disabled || isLoading) return;
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
+    if (disabled || isLoading) return
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
     if (file) {
-      processFile(file);
+      processFile(file)
     }
-  };
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      processFile(file);
+      processFile(file)
     }
-  };
+  }
 
   const processFile = (file: File) => {
     // Only accept CSV files
     if (!file.type.includes('text') && file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      setUploadStatus('error');
-      setUploadMessage('Please upload a CSV file. If you have an Excel file, export it as CSV first.');
-      return;
+      setUploadStatus('error')
+      setUploadMessage('Please upload a CSV file. If you have an Excel file, export it as CSV first.')
+      return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setUploadStatus('error');
-      setUploadMessage('File size exceeds 10MB limit. Please upload a smaller file.');
-      return;
+      setUploadStatus('error')
+      setUploadMessage('File size exceeds 10MB limit. Please upload a smaller file.')
+      return
     }
 
-    setUploadStatus('uploading');
-    setUploadMessage('Processing file...');
-    onFileUpload(file);
-  };
+    setUploadStatus('uploading')
+    setUploadMessage('Processing file...')
+    onFileUpload(file)
+  }
 
   const handleBrowseClick = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   return (
     <div>
@@ -71,15 +71,18 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative border-2 border-dashed rounded-md p-8 transition-smooth ${
+        className={`transition-smooth relative rounded-md border-2 border-dashed p-8 ${
           disabled
-            ? 'border-border bg-muted/30 opacity-50 cursor-not-allowed'
+            ? 'bg-muted/30 cursor-not-allowed border-border opacity-50'
             : isDragging
-            ? 'border-primary bg-primary/5'
-            : isLoading || uploadStatus === 'uploading'
-            ? 'border-primary bg-primary/5'
-            : uploadStatus === 'error' ?'border-destructive bg-destructive/5'
-            : uploadStatus === 'success' ?'border-success bg-success/5' :'border-border bg-muted/30'
+              ? 'bg-primary/5 border-primary'
+              : isLoading || uploadStatus === 'uploading'
+                ? 'bg-primary/5 border-primary'
+                : uploadStatus === 'error'
+                  ? 'bg-destructive/5 border-destructive'
+                  : uploadStatus === 'success'
+                    ? 'bg-success/5 border-success'
+                    : 'bg-muted/30 border-border'
         }`}
       >
         <input
@@ -95,30 +98,30 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
         <div className="flex flex-col items-center gap-4">
           {isLoading || uploadStatus === 'uploading' ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-text-primary font-medium">{isLoading ? 'Uploading...' : uploadMessage}</p>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-sm font-medium text-text-primary">{isLoading ? 'Uploading...' : uploadMessage}</p>
             </div>
           ) : uploadStatus === 'success' ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
+              <div className="bg-success/10 flex h-12 w-12 items-center justify-center rounded-full">
                 <Icon name="CheckCircleIcon" size={32} className="text-success" />
               </div>
-              <p className="text-sm text-text-primary font-medium text-center">{uploadMessage}</p>
+              <p className="text-center text-sm font-medium text-text-primary">{uploadMessage}</p>
             </div>
           ) : uploadStatus === 'error' ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
+              <div className="bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-full">
                 <Icon name="XCircleIcon" size={32} className="text-destructive" />
               </div>
-              <p className="text-sm text-destructive font-medium text-center">{uploadMessage}</p>
+              <p className="text-center text-sm font-medium text-destructive">{uploadMessage}</p>
             </div>
           ) : (
             <>
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
                 <Icon name="CloudArrowUpIcon" size={32} className="text-primary" />
               </div>
               <div className="text-center">
-                <p className="text-base font-medium text-text-primary mb-1">
+                <p className="mb-1 text-base font-medium text-text-primary">
                   {disabled ? 'Select an event to upload guests' : 'Drag and drop your CSV file here'}
                 </p>
                 <p className="text-sm text-text-secondary">or</p>
@@ -126,11 +129,11 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
               <button
                 onClick={handleBrowseClick}
                 disabled={disabled || isLoading}
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-medium transition-smooth hover:bg-primary/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="transition-smooth hover:bg-primary/90 active:scale-97 rounded-md bg-primary px-6 py-2.5 font-medium text-primary-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {disabled ? 'Select Event First' : 'Browse Files'}
               </button>
-              <p className="text-xs text-text-secondary text-center">
+              <p className="text-center text-xs text-text-secondary">
                 Supported format: CSV only • Maximum file size: 10MB
               </p>
             </>
@@ -138,7 +141,7 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default FileUploadZone;
+export default FileUploadZone

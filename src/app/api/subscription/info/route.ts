@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
+import { NextRequest, NextResponse } from 'next/server'
 
-import { ErrorResponses, handleAPIError } from '@/lib/errorHandler';
+import { ErrorResponses, handleAPIError } from '@/lib/errorHandler'
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
+    const userId = request.nextUrl.searchParams.get('userId')
 
     if (!userId) {
-      return ErrorResponses.missingFields(['userId']);
+      return ErrorResponses.missingFields(['userId'])
     }
 
     // Get user subscription info
@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', userId)
-      .single();
+      .single()
 
     if (userError || !userData) {
-      return ErrorResponses.userNotFound();
+      return ErrorResponses.userNotFound()
     }
 
     // Get subscription plan details
@@ -29,47 +29,44 @@ export async function GET(request: NextRequest) {
       .from('subscription_plans')
       .select('*')
       .eq('name', userData.plan_type)
-      .single();
+      .single()
 
     // Get event count
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: events, error: eventsError } = await (supabase as any)
       .from('events')
       .select('id')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
 
-    const eventCount = events?.length || 0;
+    const eventCount = events?.length || 0
 
     // Get total guest count across all events
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: guestData } = await (supabase as any)
       .from('guests')
       .select('id')
-      .in(
-        'event_id',
-        events?.map((e: any) => e.id) || []
-      );
+      .in('event_id', events?.map((e: any) => e.id) || [])
 
-    const guestCount = guestData?.length || 0;
+    const guestCount = guestData?.length || 0
 
     // Check if limits are exceeded
-    let limitExceeded = false;
-    let limitDetails = {};
+    let limitExceeded = false
+    let limitDetails = {}
 
     if (planData) {
       if (planData.event_limit && eventCount >= planData.event_limit) {
-        limitExceeded = true;
+        limitExceeded = true
         limitDetails = {
           events: {
             limit: planData.event_limit,
             used: eventCount,
             exceeded: true,
           },
-        };
+        }
       }
 
       if (planData.guest_limit && guestCount >= planData.guest_limit) {
-        limitExceeded = true;
+        limitExceeded = true
         limitDetails = {
           ...limitDetails,
           guests: {
@@ -77,7 +74,7 @@ export async function GET(request: NextRequest) {
             used: guestCount,
             exceeded: true,
           },
-        };
+        }
       }
     }
 
@@ -92,8 +89,8 @@ export async function GET(request: NextRequest) {
       },
       limitExceeded,
       limitDetails,
-    });
+    })
   } catch (error) {
-    return handleAPIError(error);
+    return handleAPIError(error)
   }
 }

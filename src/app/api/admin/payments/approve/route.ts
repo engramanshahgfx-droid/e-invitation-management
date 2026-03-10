@@ -1,67 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import twilio from 'twilio';
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import twilio from 'twilio'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '')
 
 // Initialize Twilio for WhatsApp
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_API_KEY_SECRET
-);
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_API_KEY_SECRET)
 
 // Helper to format phone numbers
 const formatPhone = (phone: string) => {
   if (!phone.startsWith('+')) {
     if (phone.startsWith('966')) {
-      return '+' + phone;
+      return '+' + phone
     } else if (phone.startsWith('0')) {
-      return '+966' + phone.substring(1);
+      return '+966' + phone.substring(1)
     }
-    return '+966' + phone;
+    return '+966' + phone
   }
-  return phone;
-};
+  return phone
+}
 
 // Approve bank transfer payment (Admin only)
 export async function POST(request: NextRequest) {
   try {
-    const { paymentId, adminId } = await request.json();
+    const { paymentId, adminId } = await request.json()
 
     // Verify admin role
-    const { data: admin } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', adminId)
-      .single() as any;
+    const { data: admin } = (await supabase.from('users').select('role').eq('id', adminId).single()) as any
 
     if ((admin as any)?.role !== 'super_admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized: Super admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized: Super admin access required' }, { status: 403 })
     }
 
     // Get payment details with user info
-    const { data: payment, error: paymentError } = await supabase
+    const { data: payment, error: paymentError } = (await supabase
       .from('payments')
       .select('*, users(email, full_name, phone_number)')
       .eq('id', paymentId)
-      .single() as any;
+      .single()) as any
 
     if (paymentError || !payment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 400 });
+      return NextResponse.json({ error: 'Payment not found' }, { status: 400 })
     }
 
     // Get plan details
-    const { data: plan } = await supabase
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', payment.plan_id)
-      .single();
+    const { data: plan } = await supabase.from('subscription_plans').select('*').eq('id', payment.plan_id).single()
 
     // Update payment status
     const { error: updatePaymentError } = await supabase
@@ -70,13 +53,13 @@ export async function POST(request: NextRequest) {
         status: 'approved',
         updated_at: new Date(),
       })
-      .eq('id', paymentId);
+      .eq('id', paymentId)
 
-    if (updatePaymentError) throw updatePaymentError;
+    if (updatePaymentError) throw updatePaymentError
 
     // Update user subscription
-    const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + 1);
+    const expiryDate = new Date()
+    expiryDate.setMonth(expiryDate.getMonth() + 1)
 
     const { error: userError } = await supabase
       .from('users')
@@ -88,9 +71,9 @@ export async function POST(request: NextRequest) {
         event_limit: plan.event_limit || 999,
         updated_at: new Date(),
       })
-      .eq('id', payment.user_id);
+      .eq('id', payment.user_id)
 
-    if (userError) throw userError;
+    if (userError) throw userError
 
     // Send WhatsApp approval notification to customer
     try {
@@ -114,56 +97,46 @@ Great news! Your bank transfer payment has been verified and approved.
 
 Thank you for your business!
 📞 Support: ${process.env.BANK_RECEIPT_WHATSAPP}
-        `.trim();
+        `.trim()
 
         await twilioClient.messages.create({
           from: 'whatsapp:' + process.env.TWILIO_PHONE_NUMBER,
           to: 'whatsapp:' + formatPhone((payment as any)?.users?.phone_number),
           body: approvalMessage,
-        });
+        })
       }
     } catch (whatsappError) {
-      console.warn('WhatsApp approval notification failed:', whatsappError);
+      console.warn('WhatsApp approval notification failed:', whatsappError)
     }
 
     return NextResponse.json({
       success: true,
       message: 'Payment approved successfully',
-    });
+    })
   } catch (error) {
-    console.error('Admin approve payment error:', error);
-    return NextResponse.json(
-      { error: 'Failed to approve payment' },
-      { status: 500 }
-    );
+    console.error('Admin approve payment error:', error)
+    return NextResponse.json({ error: 'Failed to approve payment' }, { status: 500 })
   }
 }
 
 // Reject bank transfer payment (Admin only)
 export async function DELETE(request: NextRequest) {
   try {
-    const { paymentId, adminId } = await request.json();
+    const { paymentId, adminId } = await request.json()
 
     // Verify admin role
-    const { data: admin } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', adminId)
-      .single() as any;
+    const { data: admin } = (await supabase.from('users').select('role').eq('id', adminId).single()) as any
 
     if ((admin as any)?.role !== 'super_admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized: Super admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized: Super admin access required' }, { status: 403 })
     }
 
     // Get payment and user details before deleting
-    const { data: payment } = await supabase
+    const { data: payment } = (await supabase
       .from('payments')
       .select('*, users(email, full_name, phone_number)')
       .eq('id', paymentId)
-      .single() as any;
+      .single()) as any
 
     // Update payment status to rejected
     const { error } = await supabase
@@ -172,9 +145,9 @@ export async function DELETE(request: NextRequest) {
         status: 'rejected',
         updated_at: new Date(),
       })
-      .eq('id', paymentId);
+      .eq('id', paymentId)
 
-    if (error) throw error;
+    if (error) throw error
 
     // Send WhatsApp rejection notification to customer
     try {
@@ -200,27 +173,24 @@ Unfortunately, your bank transfer could not be verified.
 
 📞 Need help?
 Contact support: ${process.env.BANK_RECEIPT_WHATSAPP}
-        `.trim();
+        `.trim()
 
         await twilioClient.messages.create({
           from: 'whatsapp:' + process.env.TWILIO_PHONE_NUMBER,
           to: 'whatsapp:' + formatPhone(payment?.users?.phone_number),
           body: rejectionMessage,
-        });
+        })
       }
     } catch (whatsappError) {
-      console.warn('WhatsApp rejection notification failed:', whatsappError);
+      console.warn('WhatsApp rejection notification failed:', whatsappError)
     }
 
     return NextResponse.json({
       success: true,
       message: 'Payment rejected successfully',
-    });
+    })
   } catch (error) {
-    console.error('Admin reject payment error:', error);
-    return NextResponse.json(
-      { error: 'Failed to reject payment' },
-      { status: 500 }
-    );
+    console.error('Admin reject payment error:', error)
+    return NextResponse.json({ error: 'Failed to reject payment' }, { status: 500 })
   }
 }

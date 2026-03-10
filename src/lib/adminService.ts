@@ -1,25 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || ''
-);
+)
 
 /**
  * Get all users (admin only)
  */
 export async function getAllUsers() {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false })
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return [];
+    console.error('Error fetching users:', error)
+    return []
   }
 }
 
@@ -32,16 +29,16 @@ export async function getUserStats() {
       supabase.from('users').select('id', { count: 'exact', head: true }),
       supabase.from('events').select('id', { count: 'exact', head: true }),
       supabase.from('guests').select('id', { count: 'exact', head: true }),
-    ]);
+    ])
 
     return {
       totalUsers: usersCount.count || 0,
       totalEvents: eventsCount.count || 0,
       totalGuests: guestsCount.count || 0,
-    };
+    }
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    return { totalUsers: 0, totalEvents: 0, totalGuests: 0 };
+    console.error('Error fetching stats:', error)
+    return { totalUsers: 0, totalEvents: 0, totalGuests: 0 }
   }
 }
 
@@ -50,20 +47,16 @@ export async function getUserStats() {
  */
 export async function getPaymentStats() {
   try {
-    const { data, error } = await supabase
-      .from('payments')
-      .select('*');
+    const { data, error } = await supabase.from('payments').select('*')
 
-    if (error) throw error;
+    if (error) throw error
 
-    const paidStatuses = new Set(['paid', 'approved']);
-    const totalRevenue = data
-      .filter(p => paidStatuses.has(p.status))
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    const approvedPayments = data.filter(p => paidStatuses.has(p.status)).length;
-    const pendingPayments = data.filter(p => p.status === 'pending').length;
-    const paypalPayments = data.filter(p => p.payment_method === 'paypal').length;
-    const bankPayments = data.filter(p => p.payment_method === 'bank_transfer').length;
+    const paidStatuses = new Set(['paid', 'approved'])
+    const totalRevenue = data.filter((p) => paidStatuses.has(p.status)).reduce((sum, p) => sum + (p.amount || 0), 0)
+    const approvedPayments = data.filter((p) => paidStatuses.has(p.status)).length
+    const pendingPayments = data.filter((p) => p.status === 'pending').length
+    const paypalPayments = data.filter((p) => p.payment_method === 'paypal').length
+    const bankPayments = data.filter((p) => p.payment_method === 'bank_transfer').length
 
     return {
       totalRevenue: totalRevenue.toFixed(2),
@@ -72,9 +65,9 @@ export async function getPaymentStats() {
       paypalPayments,
       bankPayments,
       totalPayments: data.length,
-    };
+    }
   } catch (error) {
-    console.error('Error fetching payment stats:', error);
+    console.error('Error fetching payment stats:', error)
     return {
       totalRevenue: '0.00',
       approvedPayments: 0,
@@ -82,7 +75,7 @@ export async function getPaymentStats() {
       paypalPayments: 0,
       bankPayments: 0,
       totalPayments: 0,
-    };
+    }
   }
 }
 
@@ -96,13 +89,13 @@ export async function getPendingBankTransfers() {
       .select('*, users(email, full_name), subscription_plans(name)')
       .eq('payment_method', 'bank_transfer')
       .eq('status', 'pending')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error fetching pending transfers:', error);
-    return [];
+    console.error('Error fetching pending transfers:', error)
+    return []
   }
 }
 
@@ -114,13 +107,13 @@ export async function getContactMessages() {
     const { data, error } = await supabase
       .from('contact_messages')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error fetching contact messages:', error);
-    return [];
+    console.error('Error fetching contact messages:', error)
+    return []
   }
 }
 
@@ -132,13 +125,13 @@ export async function getAllPlans() {
     const { data, error } = await supabase
       .from('subscription_plans')
       .select('*')
-      .order('display_order', { ascending: true });
+      .order('display_order', { ascending: true })
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error fetching plans:', error);
-    return [];
+    console.error('Error fetching plans:', error)
+    return []
   }
 }
 
@@ -147,8 +140,8 @@ export async function getAllPlans() {
  */
 export async function upgradeUserPlan(userId: string, planName: string) {
   try {
-    const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + 1);
+    const expiryDate = new Date()
+    expiryDate.setMonth(expiryDate.getMonth() + 1)
 
     const { data, error } = await supabase
       .from('users')
@@ -161,13 +154,13 @@ export async function upgradeUserPlan(userId: string, planName: string) {
       })
       .eq('id', userId)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error upgrading user:', error);
-    throw error;
+    console.error('Error upgrading user:', error)
+    throw error
   }
 }
 
@@ -183,13 +176,13 @@ export async function suspendUser(userId: string) {
       })
       .eq('id', userId)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error suspending user:', error);
-    throw error;
+    console.error('Error suspending user:', error)
+    throw error
   }
 }
 
@@ -205,13 +198,13 @@ export async function reactivateUser(userId: string) {
       })
       .eq('id', userId)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error reactivating user:', error);
-    throw error;
+    console.error('Error reactivating user:', error)
+    throw error
   }
 }
 
@@ -225,13 +218,13 @@ export async function markMessageAsRead(messageId: string) {
       .update({ status: 'read' })
       .eq('id', messageId)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error marking message as read:', error);
-    throw error;
+    console.error('Error marking message as read:', error)
+    throw error
   }
 }
 
@@ -245,12 +238,12 @@ export async function replyToMessage(messageId: string, reply: string) {
       .update({ status: 'replied', reply })
       .eq('id', messageId)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return data;
+    if (error) throw error
+    return data
   } catch (error) {
-    console.error('Error replying to message:', error);
-    throw error;
+    console.error('Error replying to message:', error)
+    throw error
   }
 }

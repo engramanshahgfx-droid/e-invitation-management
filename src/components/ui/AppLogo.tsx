@@ -1,16 +1,15 @@
-'use client';
+'use client'
 
-import React from 'react';
-import AppIcon from './AppIcon';
-import AppImage from './AppImage';
+import AppIcon from './AppIcon'
+import AppImage from './AppImage'
 
 interface AppLogoProps {
-  src?: string; // Image source (optional)
-  text?: string; // Logo text (optional)
-  iconName?: string; // Icon name when no image
-  size?: number; // Size for icon/image
-  className?: string; // Additional classes
-  onClick?: () => void; // Click handler
+  src?: string // Image source (optional)
+  text?: string // Logo text (optional)
+  iconName?: string // Icon name when no image
+  size?: number // Size for icon/image
+  className?: string // Additional classes
+  onClick?: () => void // Click handler
 }
 
 function AppLogo({
@@ -36,7 +35,7 @@ function AppLogo({
       {/* Show text if provided */}
       {text && <span className="text-xl font-bold">{text}</span>}
     </div>
-  );
+  )
 }
 
-export default AppLogo;
+export default AppLogo

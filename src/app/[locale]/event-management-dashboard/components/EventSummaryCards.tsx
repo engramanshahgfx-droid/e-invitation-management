@@ -1,19 +1,19 @@
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
 
 interface SummaryCard {
-  label: string;
-  labelAr: string;
-  value: number;
-  icon: string;
-  color: 'primary' | 'success' | 'warning' | 'accent';
+  label: string
+  labelAr: string
+  value: number
+  icon: string
+  color: 'primary' | 'success' | 'warning' | 'accent'
   trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+    value: number
+    isPositive: boolean
+  }
 }
 
 interface EventSummaryCardsProps {
-  cards: SummaryCard[];
+  cards: SummaryCard[]
 }
 
 const EventSummaryCards = ({ cards }: EventSummaryCardsProps) => {
@@ -23,19 +23,19 @@ const EventSummaryCards = ({ cards }: EventSummaryCardsProps) => {
       success: 'bg-success/10 text-success',
       warning: 'bg-warning/10 text-warning',
       accent: 'bg-accent/10 text-accent',
-    };
-    return colorMap[color];
-  };
+    }
+    return colorMap[color]
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       {cards.map((card, index) => (
         <div
           key={index}
-          className="bg-card rounded-lg p-6 shadow-warm-md hover:shadow-warm-lg transition-smooth border border-border"
+          className="transition-smooth rounded-lg border border-border bg-card p-6 shadow-warm-md hover:shadow-warm-lg"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className={`p-3 rounded-lg ${getColorClasses(card.color)}`}>
+          <div className="mb-4 flex items-start justify-between">
+            <div className={`rounded-lg p-3 ${getColorClasses(card.color)}`}>
               <Icon name={card.icon as any} size={24} />
             </div>
             {card.trend && (
@@ -44,22 +44,19 @@ const EventSummaryCards = ({ cards }: EventSummaryCardsProps) => {
                   card.trend.isPositive ? 'text-success' : 'text-destructive'
                 }`}
               >
-                <Icon
-                  name={card.trend.isPositive ? 'ArrowTrendingUpIcon' : 'ArrowTrendingDownIcon'}
-                  size={16}
-                />
+                <Icon name={card.trend.isPositive ? 'ArrowTrendingUpIcon' : 'ArrowTrendingDownIcon'} size={16} />
                 <span>{card.trend.value}%</span>
               </div>
             )}
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-text-secondary font-caption">{card.label}</p>
-            <p className="text-3xl font-bold text-text-primary font-mono">{card.value}</p>
+            <p className="font-caption text-sm text-text-secondary">{card.label}</p>
+            <p className="font-mono text-3xl font-bold text-text-primary">{card.value}</p>
           </div>
         </div>
       ))}
     </div>
-  );
-};
+  )
+}
 
-export default EventSummaryCards;
+export default EventSummaryCards

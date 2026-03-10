@@ -1,30 +1,30 @@
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
 
 interface Event {
-  id: string;
-  name: string;
-  date: string;
-  venue: string;
-  guestCount?: number;
-  invitationsSent?: number;
-  confirmed?: number;
-  declined?: number;
-  noResponse?: number;
-  checkedIn?: number;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'draft';
-  description?: string;
-  event_type?: string;
-  expected_guests?: number;
+  id: string
+  name: string
+  date: string
+  venue: string
+  guestCount?: number
+  invitationsSent?: number
+  confirmed?: number
+  declined?: number
+  noResponse?: number
+  checkedIn?: number
+  status: 'upcoming' | 'ongoing' | 'completed' | 'draft'
+  description?: string
+  event_type?: string
+  expected_guests?: number
 }
 
 interface EventTableRowProps {
-  event: Event;
-  isSelected: boolean;
-  onSelect: () => void;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onViewAnalytics: () => void;
-  onArchive: () => void;
+  event: Event
+  isSelected: boolean
+  onSelect: () => void
+  onEdit: () => void
+  onDuplicate: () => void
+  onViewAnalytics: () => void
+  onArchive: () => void
 }
 
 const EventTableRow = ({
@@ -42,9 +42,9 @@ const EventTableRow = ({
       ongoing: 'bg-success/10 text-success',
       completed: 'bg-muted text-text-secondary',
       draft: 'bg-warning/10 text-warning',
-    };
-    return statusMap[status];
-  };
+    }
+    return statusMap[status]
+  }
 
   const getStatusLabel = (status: Event['status']) => {
     const labelMap = {
@@ -52,22 +52,27 @@ const EventTableRow = ({
       ongoing: 'Ongoing',
       completed: 'Completed',
       draft: 'Draft',
-    };
-    return labelMap[status];
-  };
+    }
+    return labelMap[status]
+  }
 
-  const attendanceRate = event.invitationsSent > 0 
-    ? Math.round((event.checkedIn / event.invitationsSent) * 100) 
-    : 0;
+  const guestCount = event.guestCount ?? 0
+  const invitationsSent = event.invitationsSent ?? 0
+  const confirmed = event.confirmed ?? 0
+  const declined = event.declined ?? 0
+  const noResponse = event.noResponse ?? 0
+  const checkedIn = event.checkedIn ?? 0
+
+  const attendanceRate = invitationsSent > 0 ? Math.round((checkedIn / invitationsSent) * 100) : 0
 
   return (
-    <tr className={`border-b border-border hover:bg-muted/50 transition-smooth ${isSelected ? 'bg-primary/5' : ''}`}>
+    <tr className={`hover:bg-muted/50 transition-smooth border-b border-border ${isSelected ? 'bg-primary/5' : ''}`}>
       <td className="px-6 py-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={onSelect}
-          className="w-4 h-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
+          className="h-4 w-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
           aria-label={`Select ${event.name}`}
         />
       </td>
@@ -79,24 +84,26 @@ const EventTableRow = ({
       </td>
       <td className="px-6 py-4 text-text-primary">{event.date}</td>
       <td className="px-6 py-4">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(event.status)}`}
+        >
           {getStatusLabel(event.status)}
         </span>
       </td>
-      <td className="px-6 py-4 text-center text-text-primary font-mono">{event.guestCount}</td>
+      <td className="px-6 py-4 text-center font-mono text-text-primary">{guestCount}</td>
       <td className="px-6 py-4 text-center">
         <div className="flex flex-col items-center gap-1">
-          <span className="text-text-primary font-mono">{event.invitationsSent}</span>
+          <span className="font-mono text-text-primary">{invitationsSent}</span>
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-success">{event.confirmed}</span>
-            <span className="text-destructive">{event.declined}</span>
-            <span className="text-warning">{event.noResponse}</span>
+            <span className="text-success">{confirmed}</span>
+            <span className="text-destructive">{declined}</span>
+            <span className="text-warning">{noResponse}</span>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 text-center">
         <div className="flex flex-col items-center gap-1">
-          <span className="text-text-primary font-mono">{event.checkedIn}</span>
+          <span className="font-mono text-text-primary">{checkedIn}</span>
           <span className="text-xs text-text-secondary">{attendanceRate}%</span>
         </div>
       </td>
@@ -104,7 +111,7 @@ const EventTableRow = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onEdit}
-            className="p-2 text-primary hover:bg-primary/10 rounded-md transition-smooth"
+            className="hover:bg-primary/10 transition-smooth rounded-md p-2 text-primary"
             aria-label={`Edit ${event.name}`}
             title="Edit Event"
           >
@@ -112,7 +119,7 @@ const EventTableRow = ({
           </button>
           <button
             onClick={onDuplicate}
-            className="p-2 text-secondary hover:bg-secondary/10 rounded-md transition-smooth"
+            className="hover:bg-secondary/10 transition-smooth rounded-md p-2 text-secondary"
             aria-label={`Duplicate ${event.name}`}
             title="Duplicate Event"
           >
@@ -120,7 +127,7 @@ const EventTableRow = ({
           </button>
           <button
             onClick={onViewAnalytics}
-            className="p-2 text-accent hover:bg-accent/10 rounded-md transition-smooth"
+            className="hover:bg-accent/10 transition-smooth rounded-md p-2 text-accent"
             aria-label={`View analytics for ${event.name}`}
             title="View Analytics"
           >
@@ -128,7 +135,7 @@ const EventTableRow = ({
           </button>
           <button
             onClick={onArchive}
-            className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-smooth"
+            className="hover:bg-destructive/10 transition-smooth rounded-md p-2 text-destructive"
             aria-label={`Archive ${event.name}`}
             title="Archive Event"
           >
@@ -137,7 +144,7 @@ const EventTableRow = ({
         </div>
       </td>
     </tr>
-  );
-};
+  )
+}
 
-export default EventTableRow;
+export default EventTableRow

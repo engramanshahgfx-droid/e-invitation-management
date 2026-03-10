@@ -1,58 +1,54 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { getCurrentUser } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+import { useLocale } from 'next-intl'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-export default function PayPalCheckoutPage({ params }: { params: { locale: string } }) {
-  const router = useRouter();
-  const locale = useLocale();
-  const searchParams = useSearchParams();
-  const planId = searchParams.get('planId');
+export default function PayPalCheckoutPage() {
+  const router = useRouter()
+  const locale = useLocale()
+  const searchParams = useSearchParams()
+  const planId = searchParams.get('planId')
 
-  const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
-  const [processing, setProcessing] = useState(false);
+  const [loading, setLoading] = useState(true)
+  const [plan, setPlan] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
-    initializeCheckout();
-  }, [planId]);
+    initializeCheckout()
+  }, [planId])
 
   const initializeCheckout = async () => {
     try {
-      const currentUser = await getCurrentUser();
+      const currentUser = await getCurrentUser()
       if (!currentUser) {
-        router.push(`/${locale}/auth/login`);
-        return;
+        router.push(`/${locale}/auth/login`)
+        return
       }
 
-      setUser(currentUser);
+      setUser(currentUser)
 
       if (!planId) {
-        router.push(`/${locale}/pricing`);
-        return;
+        router.push(`/${locale}/pricing`)
+        return
       }
 
       // Fetch plan details
-      const { data: planData } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('id', planId)
-        .single();
+      const { data: planData } = await supabase.from('subscription_plans').select('*').eq('id', planId).single()
 
-      setPlan(planData);
+      setPlan(planData)
     } catch (error) {
-      console.error('Error initializing checkout:', error);
+      console.error('Error initializing checkout:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handlePayPalPayment = async () => {
-    setProcessing(true);
+    setProcessing(true)
 
     try {
       // Create order on backend
@@ -63,11 +59,11 @@ export default function PayPalCheckoutPage({ params }: { params: { locale: strin
           planId,
           userId: user.id,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(data.error)
 
       // In production, this would redirect to actual PayPal
       // For now, simulate PayPal success
@@ -79,29 +75,29 @@ export default function PayPalCheckoutPage({ params }: { params: { locale: strin
           transactionId: data.transactionId,
           userId: user.id,
         }),
-      });
+      })
 
       if (verifyResponse.ok) {
-        router.push(`/${locale}/payment-success`);
+        router.push(`/${locale}/payment-success`)
       }
     } catch (error) {
-      console.error('PayPal error:', error);
-      alert('Failed to process PayPal payment. Please try again.');
+      console.error('PayPal error:', error)
+      alert('Failed to process PayPal payment. Please try again.')
     } finally {
-      setProcessing(false);
+      setProcessing(false)
     }
-  };
+  }
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-gray-600">Loading checkout...</div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-md rounded-lg bg-white p-8 shadow-lg">
         <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
 
@@ -138,5 +134,5 @@ export default function PayPalCheckoutPage({ params }: { params: { locale: strin
         )}
       </div>
     </div>
-  );
+  )
 }

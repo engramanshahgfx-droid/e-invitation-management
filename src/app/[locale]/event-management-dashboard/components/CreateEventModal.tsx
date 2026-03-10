@@ -1,29 +1,29 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
+import { useEffect, useState } from 'react'
 
 interface CreateEventModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (eventData: EventFormData) => Promise<void> | void;
-  editingEvent?: EventFormData | null;
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (eventData: EventFormData) => Promise<void> | void
+  editingEvent?: EventFormData | null
 }
 
 interface EventFormData {
-  id?: string;
-  name: string;
-  date: string;
-  venue: string;
-  description: string;
-  expectedGuests: number;
-  eventType: string;
+  id?: string
+  name: string
+  date: string
+  venue: string
+  description: string
+  expectedGuests: number
+  eventType: string
 }
 
 const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEventModalProps) => {
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
     date: '',
@@ -31,15 +31,15 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
     description: '',
     expectedGuests: 0,
     eventType: 'wedding',
-  });
+  })
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    setIsHydrated(true)
+  }, [])
 
   useEffect(() => {
     if (editingEvent) {
-      setFormData(editingEvent);
+      setFormData(editingEvent)
     } else {
       setFormData({
         name: '',
@@ -48,70 +48,62 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
         description: '',
         expectedGuests: 0,
         eventType: 'wedding',
-      });
+      })
     }
-    setError(null);
-  }, [editingEvent, isOpen]);
+    setError(null)
+  }, [editingEvent, isOpen])
 
   if (!isHydrated) {
-    return null;
+    return null
   }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      setIsLoading(true);
-      setError(null);
-      await onSubmit(formData);
-      onClose();
+      setIsLoading(true)
+      setError(null)
+      await onSubmit(formData)
+      onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save event');
+      setError(err instanceof Error ? err.message : 'Failed to save event')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+    const { name, value } = e.target
+    setFormData((prev) => ({
       ...prev,
       [name]: name === 'expectedGuests' ? parseInt(value) || 0 : value,
-    }));
-  };
+    }))
+  }
 
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/50 z-[999] animate-fade-in"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none overflow-y-auto">
-        <div className="bg-card rounded-xl shadow-warm-xl w-full max-w-2xl my-8 animate-slide-up pointer-events-auto flex flex-col max-h-[calc(100vh-4rem)]">
-          <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-            <h2 className="text-2xl font-heading font-semibold text-text-primary">
+      <div className="animate-fade-in fixed inset-0 z-[999] bg-black/50" onClick={onClose} aria-hidden="true" />
+      <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4">
+        <div className="pointer-events-auto my-8 flex max-h-[calc(100vh-4rem)] w-full max-w-2xl animate-slide-up flex-col rounded-xl bg-card shadow-warm-xl">
+          <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-6 py-4">
+            <h2 className="font-heading text-2xl font-semibold text-text-primary">
               {editingEvent ? 'Edit Event' : 'Create New Event'}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 text-text-secondary hover:text-text-primary transition-smooth rounded-md hover:bg-muted"
+              className="transition-smooth rounded-md p-2 text-text-secondary hover:bg-muted hover:text-text-primary"
               aria-label="Close modal"
             >
               <Icon name="XMarkIcon" size={24} />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {error && (
-              <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-6 p-6">
+            {error && <div className="rounded-md border border-red-400 bg-red-100 p-4 text-red-700">{error}</div>}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-text-primary mb-2">
+              <label htmlFor="name" className="mb-2 block text-sm font-medium text-text-primary">
                 Event Name *
               </label>
               <input
@@ -122,14 +114,14 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 onChange={handleChange}
                 required
                 autoFocus
-                className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 placeholder="e.g., Wedding - Sarah & Ahmed"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-text-primary mb-2">
+                <label htmlFor="date" className="mb-2 block text-sm font-medium text-text-primary">
                   Event Date *
                 </label>
                 <input
@@ -139,12 +131,12 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                   value={formData.date}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                  className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 />
               </div>
 
               <div>
-                <label htmlFor="eventType" className="block text-sm font-medium text-text-primary mb-2">
+                <label htmlFor="eventType" className="mb-2 block text-sm font-medium text-text-primary">
                   Event Type *
                 </label>
                 <select
@@ -153,7 +145,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                   value={formData.eventType}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                  className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 >
                   <option value="wedding">Wedding</option>
                   <option value="corporate">Corporate Event</option>
@@ -165,7 +157,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
             </div>
 
             <div>
-              <label htmlFor="venue" className="block text-sm font-medium text-text-primary mb-2">
+              <label htmlFor="venue" className="mb-2 block text-sm font-medium text-text-primary">
                 Venue *
               </label>
               <input
@@ -175,13 +167,13 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 value={formData.venue}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 placeholder="e.g., Grand Ballroom, Riyadh"
               />
             </div>
 
             <div>
-              <label htmlFor="expectedGuests" className="block text-sm font-medium text-text-primary mb-2">
+              <label htmlFor="expectedGuests" className="mb-2 block text-sm font-medium text-text-primary">
                 Expected Number of Guests *
               </label>
               <input
@@ -192,13 +184,13 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 onChange={handleChange}
                 required
                 min="1"
-                className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 placeholder="e.g., 250"
               />
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-text-primary mb-2">
+              <label htmlFor="description" className="mb-2 block text-sm font-medium text-text-primary">
                 Event Description
               </label>
               <textarea
@@ -207,32 +199,34 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth resize-none"
+                className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 placeholder="Add any additional details about your event..."
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-4 border-t border-border">
+            <div className="flex items-center gap-3 border-t border-border pt-4">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 px-6 py-3 bg-muted text-text-primary rounded-md font-medium transition-smooth hover:bg-muted/80 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="transition-smooth hover:bg-muted/80 flex-1 rounded-md bg-muted px-6 py-3 font-medium text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium transition-smooth hover:bg-primary/90 shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="transition-smooth hover:bg-primary/90 active:scale-97 flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                     Creating...
                   </>
+                ) : editingEvent ? (
+                  'Update Event'
                 ) : (
-                  editingEvent ? 'Update Event' : 'Create Event'
+                  'Create Event'
                 )}
               </button>
             </div>
@@ -240,7 +234,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default CreateEventModal;
+export default CreateEventModal

@@ -1,26 +1,26 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import Icon from '@/components/ui/AppIcon';
-import { supabase } from '@/lib/supabase';
-import { getCurrentUser } from '@/lib/auth';
+import Icon from '@/components/ui/AppIcon'
+import { getCurrentUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+import { useLocale } from 'next-intl'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface HeaderProps {
-  className?: string;
+  className?: string
 }
 
 const Header = ({ className = '' }: HeaderProps) => {
-  const locale = useLocale();
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isEventSelectorOpen, setIsEventSelectorOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState('Wedding - Sarah & Ahmed');
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const locale = useLocale()
+  const pathname = usePathname()
+  const router = useRouter()
+  const [isEventSelectorOpen, setIsEventSelectorOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState('Wedding - Sarah & Ahmed')
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   const navigationTabs = [
     {
@@ -44,64 +44,74 @@ const Header = ({ className = '' }: HeaderProps) => {
       icon: 'QrCodeIcon',
       tooltip: 'Real-time attendance tracking',
     },
-  ];
+  ]
 
   useEffect(() => {
-    fetchUser();
-  }, []);
+    fetchUser()
+  }, [])
 
   const fetchUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
+      const currentUser = await getCurrentUser()
       if (currentUser) {
-        const { data: userProfile } = await supabase
+        const { data: userProfile } = (await supabase
           .from('users')
           .select('*')
           .eq('id', currentUser.id)
-          .single() as any;
-        setUser({ ...currentUser, profile: userProfile });
+          .single()) as any
+        setUser({ ...currentUser, profile: userProfile })
       }
     } catch (error) {
-      console.warn('Error fetching user:', error);
+      console.warn('Error fetching user:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push(`/${locale}/auth/login`);
-  };
+    await supabase.auth.signOut()
+    router.push(`/${locale}/auth/login`)
+  }
 
   const getInitials = () => {
-    const name = user?.profile?.full_name || user?.email || 'U';
+    const name = user?.profile?.full_name || user?.email || 'U'
     return name
       .split(' ')
       .map((n: string) => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2);
-  };
+      .slice(0, 2)
+  }
 
   const events = [
     { id: 1, name: 'Wedding - Sarah & Ahmed', date: '2026-03-15', status: 'active' },
     { id: 2, name: 'Corporate Gala 2026', date: '2026-04-20', status: 'planning' },
     { id: 3, name: 'Birthday - Mohammed', date: '2026-05-10', status: 'planning' },
-  ];
+  ]
 
   const handleEventSelect = (eventName: string) => {
-    setSelectedEvent(eventName);
-    setIsEventSelectorOpen(false);
-  };
+    setSelectedEvent(eventName)
+    setIsEventSelectorOpen(false)
+  }
 
-  const localizedPath = (path: string) => `/${locale}${path}`;
+  const localizedPath = (path: string) => `/${locale}${path}`
 
   return (
-    <header className={`bg-card shadow-warm-md fixed top-0 left-0 right-0 z-100 ${className}`}>
-      <div className="flex items-center justify-between h-16 md:h-20 px-3 sm:px-4 md:px-8">
+    <header className={`fixed left-0 right-0 top-0 z-100 bg-card shadow-warm-md ${className}`}>
+      <div className="flex h-16 items-center justify-between px-3 sm:px-4 md:h-20 md:px-8">
         <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
-          <Link href={localizedPath('/event-management-dashboard')} className="flex items-center gap-2 md:gap-3 transition-smooth hover:opacity-80">
-            <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 md:w-10 md:h-10">
+          <Link
+            href={localizedPath('/event-management-dashboard')}
+            className="transition-smooth flex items-center gap-2 hover:opacity-80 md:gap-3"
+          >
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 md:h-10 md:w-10"
+            >
               <rect width="40" height="40" rx="8" fill="var(--color-primary)" />
               <path
                 d="M20 10L12 16V28C12 28.5304 12.2107 29.0391 12.5858 29.4142C12.9609 29.7893 13.4696 30 14 30H26C26.5304 30 27.0391 29.7893 27.4142 29.4142C27.7893 29.0391 28 28.5304 28 28V16L20 10Z"
@@ -118,49 +128,49 @@ const Header = ({ className = '' }: HeaderProps) => {
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="hidden sm:inline text-lg md:text-xl font-heading font-semibold text-primary">InviteFlow</span>
+            <span className="hidden font-heading text-lg font-semibold text-primary sm:inline md:text-xl">
+              InviteFlow
+            </span>
           </Link>
 
           <div className="relative">
             <button
               onClick={() => setIsEventSelectorOpen(!isEventSelectorOpen)}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 bg-muted rounded-md transition-smooth hover:bg-muted/80 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+              className="transition-smooth hover:bg-muted/80 flex items-center gap-1 rounded-md bg-muted px-2 py-2 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 sm:gap-2 sm:px-3 md:px-4"
               aria-label="Select event"
               aria-expanded={isEventSelectorOpen}
             >
-              <Icon name="CalendarIcon" size={18} className="text-primary sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline text-xs sm:text-sm font-medium text-text-primary max-w-[100px] sm:max-w-[150px] md:max-w-[200px] truncate">{selectedEvent}</span>
+              <Icon name="CalendarIcon" size={18} className="text-primary sm:h-5 sm:w-5" />
+              <span className="hidden max-w-[100px] truncate text-xs font-medium text-text-primary sm:inline sm:max-w-[150px] sm:text-sm md:max-w-[200px]">
+                {selectedEvent}
+              </span>
               <Icon
                 name="ChevronDownIcon"
                 size={14}
-                className={`text-text-secondary transition-smooth sm:w-4 sm:h-4 ${isEventSelectorOpen ? 'rotate-180' : ''}`}
+                className={`transition-smooth text-text-secondary sm:h-4 sm:w-4 ${isEventSelectorOpen ? 'rotate-180' : ''}`}
               />
             </button>
 
             {isEventSelectorOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-50"
-                  onClick={() => setIsEventSelectorOpen(false)}
-                  aria-hidden="true"
-                />
-                <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-popover rounded-md shadow-warm-lg z-200 overflow-hidden animate-slide-in">
+                <div className="fixed inset-0 z-50" onClick={() => setIsEventSelectorOpen(false)} aria-hidden="true" />
+                <div className="absolute left-0 top-full z-200 mt-2 w-72 animate-slide-in overflow-hidden rounded-md bg-popover shadow-warm-lg sm:w-80">
                   <div className="p-2">
                     {events.map((event) => (
                       <button
                         key={event.id}
                         onClick={() => handleEventSelect(event.name)}
-                        className={`w-full flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 rounded-md transition-smooth hover:bg-muted ${
+                        className={`transition-smooth flex w-full items-center justify-between rounded-md px-3 py-2 hover:bg-muted sm:px-4 sm:py-3 ${
                           selectedEvent === event.name ? 'bg-primary/10' : ''
                         }`}
                       >
                         <div className="flex flex-col items-start">
-                          <span className="text-xs sm:text-sm font-medium text-text-primary">{event.name}</span>
+                          <span className="text-xs font-medium text-text-primary sm:text-sm">{event.name}</span>
                           <span className="text-xs text-text-secondary">{event.date}</span>
                         </div>
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            event.status === 'active' ?'bg-success/10 text-success' :'bg-warning/10 text-warning'
+                          className={`rounded-full px-2 py-1 text-xs ${
+                            event.status === 'active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
                           }`}
                         >
                           {event.status}
@@ -171,7 +181,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                   <div className="border-t border-border p-2">
                     <Link
                       href={localizedPath('/event-management-dashboard')}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-primary hover:bg-muted rounded-md transition-smooth"
+                      className="transition-smooth flex items-center gap-2 rounded-md px-3 py-2 text-xs text-primary hover:bg-muted sm:px-4 sm:text-sm"
                       onClick={() => setIsEventSelectorOpen(false)}
                     >
                       <Icon name="PlusIcon" size={16} />
@@ -186,22 +196,22 @@ const Header = ({ className = '' }: HeaderProps) => {
 
         <nav className="flex items-center gap-1" role="navigation" aria-label="Main navigation">
           {navigationTabs.map((tab) => {
-            const href = localizedPath(tab.path);
-            const isActive = pathname === href;
+            const href = localizedPath(tab.path)
+            const isActive = pathname === href
             return (
               <Link
                 key={tab.path}
                 href={href}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 md:px-6 py-2 md:py-3 rounded-md transition-smooth hover:bg-muted ${
+                className={`transition-smooth flex items-center gap-1 rounded-md px-2 py-2 hover:bg-muted sm:gap-2 sm:px-4 md:px-6 md:py-3 ${
                   isActive ? 'bg-primary text-primary-foreground' : 'text-text-primary'
                 }`}
                 aria-current={isActive ? 'page' : undefined}
                 title={tab.tooltip}
               >
-                <Icon name={tab.icon as any} size={18} className="sm:w-5 sm:h-5" />
-                <span className="hidden md:inline font-medium text-sm">{tab.label}</span>
+                <Icon name={tab.icon as any} size={18} className="sm:h-5 sm:w-5" />
+                <span className="hidden text-sm font-medium md:inline">{tab.label}</span>
               </Link>
-            );
+            )
           })}
         </nav>
 
@@ -210,30 +220,26 @@ const Header = ({ className = '' }: HeaderProps) => {
           <div className="relative">
             <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2 sm:gap-3 px-1 sm:px-2 md:px-3 py-2 rounded-md hover:bg-muted transition-smooth focus:outline-none"
+              className="transition-smooth flex items-center gap-2 rounded-md px-1 py-2 hover:bg-muted focus:outline-none sm:gap-3 sm:px-2 md:px-3"
               aria-label="User profile menu"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-xs font-semibold text-white sm:h-9 sm:w-9 sm:text-sm md:h-10 md:w-10">
                 {getInitials()}
               </div>
             </button>
 
             {isProfileMenuOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-50"
-                  onClick={() => setIsProfileMenuOpen(false)}
-                  aria-hidden="true"
-                />
-                <div className="absolute top-full right-0 mt-2 w-56 sm:w-64 bg-popover rounded-md shadow-warm-lg z-200 overflow-hidden">
-                  <div className="p-3 sm:p-4 border-b border-border">
-                    <p className="text-xs sm:text-sm font-semibold text-text-primary">
+                <div className="fixed inset-0 z-50" onClick={() => setIsProfileMenuOpen(false)} aria-hidden="true" />
+                <div className="absolute right-0 top-full z-200 mt-2 w-56 overflow-hidden rounded-md bg-popover shadow-warm-lg sm:w-64">
+                  <div className="border-b border-border p-3 sm:p-4">
+                    <p className="text-xs font-semibold text-text-primary sm:text-sm">
                       {user?.profile?.full_name || 'User'}
                     </p>
-                    <p className="text-xs text-text-secondary mt-1">{user?.email}</p>
+                    <p className="mt-1 text-xs text-text-secondary">{user?.email}</p>
                     {user?.profile && (
                       <>
-                        <p className="text-xs text-text-secondary mt-2">
+                        <p className="mt-2 text-xs text-text-secondary">
                           Plan: <span className="font-medium capitalize">{user.profile.plan_type || 'Free'}</span>
                         </p>
                         <p className="text-xs text-text-secondary">
@@ -245,7 +251,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                   <div className="p-2">
                     <Link
                       href={localizedPath('/event-management-dashboard')}
-                      className="flex items-center gap-3 px-3 sm:px-4 py-2 text-xs sm:text-sm text-text-primary hover:bg-muted rounded-md transition-smooth"
+                      className="transition-smooth flex items-center gap-3 rounded-md px-3 py-2 text-xs text-text-primary hover:bg-muted sm:px-4 sm:text-sm"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Icon name="SettingsIcon" size={16} />
@@ -253,10 +259,10 @@ const Header = ({ className = '' }: HeaderProps) => {
                     </Link>
                     <button
                       onClick={() => {
-                        handleLogout();
-                        setIsProfileMenuOpen(false);
+                        handleLogout()
+                        setIsProfileMenuOpen(false)
                       }}
-                      className="w-full flex items-center gap-3 px-3 sm:px-4 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50 rounded-md transition-smooth"
+                      className="transition-smooth flex w-full items-center gap-3 rounded-md px-3 py-2 text-xs text-red-600 hover:bg-red-50 sm:px-4 sm:text-sm"
                     >
                       <Icon name="LogOutIcon" size={16} />
                       <span>Sign Out</span>
@@ -269,7 +275,7 @@ const Header = ({ className = '' }: HeaderProps) => {
         )}
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

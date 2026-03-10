@@ -1,33 +1,33 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { supabase } from '@/lib/supabase';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+import { useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price_monthly: number;
-  price_yearly?: number;
-  event_limit: number | null;
-  features: any;
-  is_active: boolean;
-  display_order: number;
+  id: string
+  name: string
+  description: string
+  price_monthly: number
+  price_yearly?: number
+  event_limit: number | null
+  features: any
+  is_active: boolean
+  display_order: number
 }
 
 export default function PricingPage() {
-  const router = useRouter();
-  const locale = useLocale();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPayment, setSelectedPayment] = useState<{ planId: string; method: 'paypal' | 'bank' } | null>(null);
+  const router = useRouter()
+  const locale = useLocale()
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedPayment, setSelectedPayment] = useState<{ planId: string; method: 'paypal' | 'bank' } | null>(null)
 
   useEffect(() => {
-    fetchPlans();
-  }, []);
+    fetchPlans()
+  }, [])
 
   const fetchPlans = async () => {
     try {
@@ -35,64 +35,60 @@ export default function PricingPage() {
         .from('subscription_plans')
         .select('*')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .order('display_order', { ascending: true })
 
-      if (error) throw error;
-      setPlans(data);
+      if (error) throw error
+      setPlans(data)
     } catch (error) {
-      console.error('Error fetching plans:', error);
+      console.error('Error fetching plans:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handlePayment = async (planId: string, method: 'paypal' | 'bank') => {
     try {
-      const user = await getCurrentUser();
+      const user = await getCurrentUser()
       if (!user) {
-        router.push(`/${locale}/auth/login`);
-        return;
+        router.push(`/${locale}/auth/login`)
+        return
       }
 
-      setSelectedPayment({ planId, method });
+      setSelectedPayment({ planId, method })
 
       if (method === 'paypal') {
         // Redirect to PayPal checkout
-        router.push(`/${locale}/payment/paypal?planId=${planId}`);
+        router.push(`/${locale}/payment/paypal?planId=${planId}`)
       } else {
         // Redirect to bank transfer page
-        router.push(`/${locale}/payment/bank-transfer?planId=${planId}`);
+        router.push(`/${locale}/payment/bank-transfer?planId=${planId}`)
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to process. Please try again.');
+      console.error('Error:', error)
+      alert('Failed to process. Please try again.')
     } finally {
-      setSelectedPayment(null);
+      setSelectedPayment(null)
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-gray-600">Loading pricing plans...</div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900">
-            Simple, Transparent Pricing
-          </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            Choose the perfect plan for your invitation needs
-          </p>
+          <h1 className="text-5xl font-bold text-gray-900">Simple, Transparent Pricing</h1>
+          <p className="mt-4 text-xl text-gray-600">Choose the perfect plan for your invitation needs</p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="mt-12 grid gap-8 lg:grid-cols-2 max-w-5xl mx-auto">
+        <div className="mx-auto mt-12 grid max-w-5xl gap-8 lg:grid-cols-2">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -112,9 +108,7 @@ export default function PricingPage() {
               <p className="mt-2 text-gray-600">{plan.description}</p>
 
               <div className="mt-6">
-                <span className="text-5xl font-bold text-gray-900">
-                  ${plan.price_monthly}
-                </span>
+                <span className="text-5xl font-bold text-gray-900">${plan.price_monthly}</span>
                 <span className="text-gray-600">/month</span>
               </div>
 
@@ -126,16 +120,17 @@ export default function PricingPage() {
                     {plan.event_limit === 999 ? 'Unlimited Events' : `Up to ${plan.event_limit} Events`}
                   </li>
                 )}
-                {plan.features && typeof plan.features === 'object' && (
-                  Object.entries(plan.features).map(([key, value]: any) => (
-                    value && (
-                      <li key={key} className="flex items-center text-gray-700">
-                        <span className="mr-3 text-green-500">✓</span>
-                        {key.replace(/_/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase())}
-                      </li>
-                    )
-                  ))
-                )}
+                {plan.features &&
+                  typeof plan.features === 'object' &&
+                  Object.entries(plan.features).map(
+                    ([key, value]: any) =>
+                      value && (
+                        <li key={key} className="flex items-center text-gray-700">
+                          <span className="mr-3 text-green-500">✓</span>
+                          {key.replace(/_/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase())}
+                        </li>
+                      )
+                  )}
               </ul>
 
               {/* Payment Methods */}
@@ -167,17 +162,13 @@ export default function PricingPage() {
         {/* Payment Methods Info */}
         <div className="mx-auto mt-16 max-w-3xl">
           <div className="rounded-2xl bg-gray-50 p-12">
-            <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
-              Flexible Payment Options
-            </h2>
+            <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">Flexible Payment Options</h2>
 
             <div className="grid gap-8 md:grid-cols-2">
               {/* PayPal */}
               <div className="rounded-lg border-2 border-blue-200 bg-white p-6">
                 <div className="mb-4 text-3xl font-bold text-blue-600">💳 PayPal</div>
-                <p className="text-gray-600">
-                  Instant automatic activation. Pay securely with PayPal.
-                </p>
+                <p className="text-gray-600">Instant automatic activation. Pay securely with PayPal.</p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-600">
                   <li>✓ Instant payment processing</li>
                   <li>✓ Automatic subscription activation</li>
@@ -188,9 +179,7 @@ export default function PricingPage() {
               {/* Bank Transfer */}
               <div className="rounded-lg border-2 border-green-200 bg-white p-6">
                 <div className="mb-4 text-3xl font-bold text-green-600">🏦 Bank Transfer</div>
-                <p className="text-gray-600">
-                  Direct bank transfer with manual admin approval.
-                </p>
+                <p className="text-gray-600">Direct bank transfer with manual admin approval.</p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-600">
                   <li>✓ Direct bank deposit</li>
                   <li>✓ Admin verification</li>
@@ -203,9 +192,7 @@ export default function PricingPage() {
 
         {/* FAQ */}
         <div className="mx-auto mt-16 max-w-3xl">
-          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">
-            Frequently Asked Questions
-          </h2>
+          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
           <div className="space-y-6">
             {[
               {
@@ -234,5 +221,5 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

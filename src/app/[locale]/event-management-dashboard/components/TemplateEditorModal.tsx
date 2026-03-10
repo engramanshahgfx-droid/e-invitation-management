@@ -1,43 +1,37 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import Icon from '@/components/ui/AppIcon';
-import AppImage from '@/components/ui/AppImage';
-import { templateService, defaultTemplate, type TemplateData } from '@/lib/templateService';
+import Icon from '@/components/ui/AppIcon'
+import AppImage from '@/components/ui/AppImage'
+import { defaultTemplate, templateService, type TemplateData } from '@/lib/templateService'
+import { useCallback, useEffect, useState } from 'react'
 
 interface TemplateEditorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (template: TemplateData) => void;
-  eventId?: string;
+  isOpen: boolean
+  onClose: () => void
+  onSave: (template: TemplateData) => void
+  eventId?: string
   eventData?: {
-    name: string;
-    date: string;
-    time?: string;
-    venue: string;
-  };
+    name: string
+    date: string
+    time?: string
+    venue: string
+  }
 }
 
-type NotificationType = 'success' | 'error' | 'info';
+type NotificationType = 'success' | 'error' | 'info'
 
 interface Notification {
-  type: NotificationType;
-  message: string;
+  type: NotificationType
+  message: string
 }
 
-const TemplateEditorModal = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  eventId,
-  eventData 
-}: TemplateEditorModalProps) => {
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [notification, setNotification] = useState<Notification | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: TemplateEditorModalProps) => {
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [notification, setNotification] = useState<Notification | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
   const [template, setTemplate] = useState<TemplateData>(() => ({
     ...defaultTemplate,
     eventDetails: {
@@ -45,15 +39,15 @@ const TemplateEditorModal = ({
       time: eventData?.time || defaultTemplate.eventDetails.time,
       venue: eventData?.venue || defaultTemplate.eventDetails.venue,
     },
-  }));
+  }))
 
   // Load existing template when modal opens
   const loadTemplate = useCallback(async () => {
-    if (!eventId) return;
-    
-    setIsLoading(true);
+    if (!eventId) return
+
+    setIsLoading(true)
     try {
-      const existingTemplate = await templateService.getTemplate(eventId);
+      const existingTemplate = await templateService.getTemplate(eventId)
       if (existingTemplate) {
         setTemplate({
           language: existingTemplate.language,
@@ -69,131 +63,131 @@ const TemplateEditorModal = ({
           },
           footerText: existingTemplate.footerText,
           footerTextAr: existingTemplate.footerTextAr,
-        });
+        })
       } else if (eventData) {
         // No existing template, use defaults with event data
-        setTemplate(prev => ({
+        setTemplate((prev) => ({
           ...prev,
           eventDetails: {
             date: eventData.date || prev.eventDetails.date,
             time: eventData.time || prev.eventDetails.time,
             venue: eventData.venue || prev.eventDetails.venue,
           },
-        }));
+        }))
       }
     } catch (error) {
-      console.error('Error loading template:', error);
-      showNotification('error', 'Failed to load existing template');
+      console.error('Error loading template:', error)
+      showNotification('error', 'Failed to load existing template')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [eventId, eventData]);
+  }, [eventId, eventData])
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    setIsHydrated(true)
+  }, [])
 
   useEffect(() => {
     if (isOpen && isHydrated) {
-      loadTemplate();
-      setHasUnsavedChanges(false);
+      loadTemplate()
+      setHasUnsavedChanges(false)
     }
-  }, [isOpen, isHydrated, loadTemplate]);
+  }, [isOpen, isHydrated, loadTemplate])
 
   // Auto-hide notification after 3 seconds
   useEffect(() => {
     if (notification) {
-      const timer = setTimeout(() => setNotification(null), 3000);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => setNotification(null), 3000)
+      return () => clearTimeout(timer)
     }
-  }, [notification]);
+  }, [notification])
 
   const showNotification = (type: NotificationType, message: string) => {
-    setNotification({ type, message });
-  };
-
-  if (!isHydrated) {
-    return null;
+    setNotification({ type, message })
   }
 
-  if (!isOpen) return null;
+  if (!isHydrated) {
+    return null
+  }
+
+  if (!isOpen) return null
 
   const handleChange = (field: string, value: string) => {
-    setHasUnsavedChanges(true);
-    
+    setHasUnsavedChanges(true)
+
     if (field.startsWith('eventDetails.')) {
-      const detailField = field.split('.')[1];
+      const detailField = field.split('.')[1]
       setTemplate((prev) => ({
         ...prev,
         eventDetails: {
           ...prev.eventDetails,
           [detailField]: value,
         },
-      }));
+      }))
     } else {
       setTemplate((prev) => ({
         ...prev,
         [field]: value,
-      }));
+      }))
     }
-  };
+  }
 
   const handleSave = async () => {
-    setIsSaving(true);
-    
+    setIsSaving(true)
+
     try {
       // Validate required fields
       if (!template.title.trim()) {
-        showNotification('error', 'Invitation title is required');
-        setIsSaving(false);
-        return;
+        showNotification('error', 'Invitation title is required')
+        setIsSaving(false)
+        return
       }
 
       if (!template.message.trim()) {
-        showNotification('error', 'Invitation message is required');
-        setIsSaving(false);
-        return;
+        showNotification('error', 'Invitation message is required')
+        setIsSaving(false)
+        return
       }
 
       // Save to database/localStorage
       if (eventId) {
-        const result = await templateService.saveTemplate(eventId, template);
-        
+        const result = await templateService.saveTemplate(eventId, template)
+
         if (!result.success) {
-          showNotification('error', result.error || 'Failed to save template');
-          setIsSaving(false);
-          return;
+          showNotification('error', result.error || 'Failed to save template')
+          setIsSaving(false)
+          return
         }
       }
 
       // Call parent onSave
-      onSave(template);
-      
-      showNotification('success', 'Template saved successfully!');
-      setHasUnsavedChanges(false);
-      
+      onSave(template)
+
+      showNotification('success', 'Template saved successfully!')
+      setHasUnsavedChanges(false)
+
       // Close modal after a short delay to show success message
       setTimeout(() => {
-        onClose();
-      }, 1000);
+        onClose()
+      }, 1000)
     } catch (error) {
-      console.error('Error saving template:', error);
-      showNotification('error', 'An unexpected error occurred');
+      console.error('Error saving template:', error)
+      showNotification('error', 'An unexpected error occurred')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleClose = () => {
     if (hasUnsavedChanges) {
-      const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?');
-      if (!confirmClose) return;
+      const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?')
+      if (!confirmClose) return
     }
-    onClose();
-  };
+    onClose()
+  }
 
   const handleResetToDefault = () => {
-    const confirmReset = window.confirm('Are you sure you want to reset to default template?');
+    const confirmReset = window.confirm('Are you sure you want to reset to default template?')
     if (confirmReset) {
       setTemplate({
         ...defaultTemplate,
@@ -202,97 +196,90 @@ const TemplateEditorModal = ({
           time: eventData?.time || defaultTemplate.eventDetails.time,
           venue: eventData?.venue || defaultTemplate.eventDetails.venue,
         },
-      });
-      setHasUnsavedChanges(true);
-      showNotification('info', 'Template reset to default');
+      })
+      setHasUnsavedChanges(true)
+      showNotification('info', 'Template reset to default')
     }
-  };
+  }
 
   // Preview content based on selected language
-  const previewContent = template.language === 'ar' ? {
-    title: template.titleAr || 'أنت مدعو!',
-    message: template.messageAr || 'يسعدنا دعوتك للاحتفال بهذه المناسبة الخاصة معنا. حضورك سيعني لنا الكثير.',
-    dateLabel: 'التاريخ',
-    timeLabel: 'الوقت',
-    venueLabel: 'المكان',
-    footerText: template.footerTextAr || 'يرجى تأكيد حضورك عن طريق مسح رمز QR أدناه.',
-  } : {
-    title: template.title,
-    message: template.message,
-    dateLabel: 'Date',
-    timeLabel: 'Time',
-    venueLabel: 'Venue',
-    footerText: template.footerText,
-  };
+  const previewContent =
+    template.language === 'ar'
+      ? {
+          title: template.titleAr || 'أنت مدعو!',
+          message: template.messageAr || 'يسعدنا دعوتك للاحتفال بهذه المناسبة الخاصة معنا. حضورك سيعني لنا الكثير.',
+          dateLabel: 'التاريخ',
+          timeLabel: 'الوقت',
+          venueLabel: 'المكان',
+          footerText: template.footerTextAr || 'يرجى تأكيد حضورك عن طريق مسح رمز QR أدناه.',
+        }
+      : {
+          title: template.title,
+          message: template.message,
+          dateLabel: 'Date',
+          timeLabel: 'Time',
+          venueLabel: 'Venue',
+          footerText: template.footerText,
+        }
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set';
+    if (!dateString) return 'Not set'
     try {
       return new Date(dateString).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-      });
+      })
     } catch {
-      return dateString;
+      return dateString
     }
-  };
+  }
 
   // Format time for display
   const formatTime = (timeString: string) => {
-    if (!timeString) return 'Not set';
+    if (!timeString) return 'Not set'
     try {
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
+      const [hours, minutes] = timeString.split(':')
+      const date = new Date()
+      date.setHours(parseInt(hours), parseInt(minutes))
       return date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
-      });
+      })
     } catch {
-      return timeString;
+      return timeString
     }
-  };
+  }
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-[300] animate-fade-in"
-        onClick={handleClose}
-        aria-hidden="true"
-      />
-      
+      <div className="animate-fade-in fixed inset-0 z-[300] bg-black/50" onClick={handleClose} aria-hidden="true" />
+
       {/* Modal */}
       <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
-        <div className="bg-card rounded-xl shadow-warm-xl w-full max-w-6xl max-h-[90vh] overflow-hidden animate-slide-up">
+        <div className="max-h-[90vh] w-full max-w-6xl animate-slide-up overflow-hidden rounded-xl bg-card shadow-warm-xl">
           {/* Header */}
-          <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
                 <Icon name="PaintBrushIcon" size={20} className="text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-heading font-semibold text-text-primary">
-                  Invitation Template Editor
-                </h2>
-                {eventData?.name && (
-                  <p className="text-sm text-text-secondary">{eventData.name}</p>
-                )}
+                <h2 className="font-heading text-xl font-semibold text-text-primary">Invitation Template Editor</h2>
+                {eventData?.name && <p className="text-sm text-text-secondary">{eventData.name}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               {hasUnsavedChanges && (
-                <span className="text-xs text-warning bg-warning/10 px-2 py-1 rounded">
-                  Unsaved changes
-                </span>
+                <span className="bg-warning/10 rounded px-2 py-1 text-xs text-warning">Unsaved changes</span>
               )}
               <button
                 onClick={handleClose}
-                className="p-2 text-text-secondary hover:text-text-primary transition-smooth rounded-md hover:bg-muted"
+                className="transition-smooth rounded-md p-2 text-text-secondary hover:bg-muted hover:text-text-primary"
                 aria-label="Close modal"
               >
                 <Icon name="XMarkIcon" size={24} />
@@ -303,12 +290,12 @@ const TemplateEditorModal = ({
           {/* Notification Banner */}
           {notification && (
             <div
-              className={`px-6 py-3 flex items-center gap-2 ${
+              className={`flex items-center gap-2 px-6 py-3 ${
                 notification.type === 'success'
                   ? 'bg-success/10 text-success'
                   : notification.type === 'error'
-                  ? 'bg-error/10 text-error'
-                  : 'bg-info/10 text-info'
+                    ? 'bg-error/10 text-error'
+                    : 'bg-info/10 text-info'
               }`}
             >
               <Icon
@@ -316,8 +303,8 @@ const TemplateEditorModal = ({
                   notification.type === 'success'
                     ? 'CheckCircleIcon'
                     : notification.type === 'error'
-                    ? 'ExclamationCircleIcon'
-                    : 'InformationCircleIcon'
+                      ? 'ExclamationCircleIcon'
+                      : 'InformationCircleIcon'
                 }
                 size={20}
               />
@@ -327,39 +314,37 @@ const TemplateEditorModal = ({
 
           {/* Loading State */}
           {isLoading ? (
-            <div className="flex items-center justify-center h-96">
+            <div className="flex h-96 items-center justify-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
                 <p className="text-text-secondary">Loading template...</p>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(90vh-120px)]">
+            <div className="grid h-[calc(90vh-120px)] grid-cols-1 lg:grid-cols-2">
               {/* Editor Panel */}
-              <div className="p-6 overflow-y-auto border-r border-border">
+              <div className="overflow-y-auto border-r border-border p-6">
                 <div className="space-y-6">
                   {/* Language Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-text-primary mb-2">
-                      Language / اللغة
-                    </label>
+                    <label className="mb-2 block text-sm font-medium text-text-primary">Language / اللغة</label>
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleChange('language', 'en')}
-                        className={`flex-1 px-4 py-2 rounded-md font-medium transition-smooth ${
+                        className={`transition-smooth flex-1 rounded-md px-4 py-2 font-medium ${
                           template.language === 'en'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-text-primary hover:bg-muted/80'
+                            : 'hover:bg-muted/80 bg-muted text-text-primary'
                         }`}
                       >
                         English
                       </button>
                       <button
                         onClick={() => handleChange('language', 'ar')}
-                        className={`flex-1 px-4 py-2 rounded-md font-medium transition-smooth ${
+                        className={`transition-smooth flex-1 rounded-md px-4 py-2 font-medium ${
                           template.language === 'ar'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-text-primary hover:bg-muted/80'
+                            : 'hover:bg-muted/80 bg-muted text-text-primary'
                         }`}
                       >
                         العربية
@@ -369,7 +354,7 @@ const TemplateEditorModal = ({
 
                   {/* Header Image URL */}
                   <div>
-                    <label htmlFor="headerImage" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="headerImage" className="mb-2 block text-sm font-medium text-text-primary">
                       Header Image URL
                     </label>
                     <input
@@ -377,17 +362,15 @@ const TemplateEditorModal = ({
                       id="headerImage"
                       value={template.headerImage}
                       onChange={(e) => handleChange('headerImage', e.target.value)}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="https://example.com/image.jpg"
                     />
-                    <p className="mt-1 text-xs text-text-secondary">
-                      Recommended: 1200x600 pixels, JPG or PNG format
-                    </p>
+                    <p className="mt-1 text-xs text-text-secondary">Recommended: 1200x600 pixels, JPG or PNG format</p>
                   </div>
 
                   {/* Invitation Title (English) */}
                   <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="title" className="mb-2 block text-sm font-medium text-text-primary">
                       Invitation Title (English)
                     </label>
                     <input
@@ -395,14 +378,14 @@ const TemplateEditorModal = ({
                       id="title"
                       value={template.title}
                       onChange={(e) => handleChange('title', e.target.value)}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="You're Invited!"
                     />
                   </div>
 
                   {/* Invitation Title (Arabic) */}
                   <div>
-                    <label htmlFor="titleAr" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="titleAr" className="mb-2 block text-sm font-medium text-text-primary">
                       Invitation Title (Arabic) / عنوان الدعوة
                     </label>
                     <input
@@ -411,14 +394,14 @@ const TemplateEditorModal = ({
                       value={template.titleAr || ''}
                       onChange={(e) => handleChange('titleAr', e.target.value)}
                       dir="rtl"
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="أنت مدعو!"
                     />
                   </div>
 
                   {/* Invitation Message (English) */}
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="message" className="mb-2 block text-sm font-medium text-text-primary">
                       Invitation Message (English)
                     </label>
                     <textarea
@@ -426,14 +409,14 @@ const TemplateEditorModal = ({
                       value={template.message}
                       onChange={(e) => handleChange('message', e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth resize-none"
+                      className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="Enter your invitation message..."
                     />
                   </div>
 
                   {/* Invitation Message (Arabic) */}
                   <div>
-                    <label htmlFor="messageAr" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="messageAr" className="mb-2 block text-sm font-medium text-text-primary">
                       Invitation Message (Arabic) / رسالة الدعوة
                     </label>
                     <textarea
@@ -442,17 +425,17 @@ const TemplateEditorModal = ({
                       onChange={(e) => handleChange('messageAr', e.target.value)}
                       dir="rtl"
                       rows={3}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth resize-none"
+                      className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="أدخل رسالة الدعوة هنا..."
                     />
                   </div>
 
                   {/* Event Details */}
                   <div className="border-t border-border pt-6">
-                    <h3 className="text-sm font-semibold text-text-primary mb-4">Event Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <h3 className="mb-4 text-sm font-semibold text-text-primary">Event Details</h3>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <div>
-                        <label htmlFor="eventDate" className="block text-sm font-medium text-text-primary mb-2">
+                        <label htmlFor="eventDate" className="mb-2 block text-sm font-medium text-text-primary">
                           Event Date
                         </label>
                         <input
@@ -460,11 +443,11 @@ const TemplateEditorModal = ({
                           id="eventDate"
                           value={template.eventDetails.date}
                           onChange={(e) => handleChange('eventDetails.date', e.target.value)}
-                          className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                          className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                         />
                       </div>
                       <div>
-                        <label htmlFor="eventTime" className="block text-sm font-medium text-text-primary mb-2">
+                        <label htmlFor="eventTime" className="mb-2 block text-sm font-medium text-text-primary">
                           Event Time
                         </label>
                         <input
@@ -472,11 +455,11 @@ const TemplateEditorModal = ({
                           id="eventTime"
                           value={template.eventDetails.time}
                           onChange={(e) => handleChange('eventDetails.time', e.target.value)}
-                          className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                          className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                         />
                       </div>
                       <div>
-                        <label htmlFor="eventVenue" className="block text-sm font-medium text-text-primary mb-2">
+                        <label htmlFor="eventVenue" className="mb-2 block text-sm font-medium text-text-primary">
                           Venue
                         </label>
                         <input
@@ -484,7 +467,7 @@ const TemplateEditorModal = ({
                           id="eventVenue"
                           value={template.eventDetails.venue}
                           onChange={(e) => handleChange('eventDetails.venue', e.target.value)}
-                          className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth"
+                          className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                           placeholder="Venue name"
                         />
                       </div>
@@ -493,7 +476,7 @@ const TemplateEditorModal = ({
 
                   {/* Footer Text (English) */}
                   <div>
-                    <label htmlFor="footerText" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="footerText" className="mb-2 block text-sm font-medium text-text-primary">
                       Footer Text (English)
                     </label>
                     <textarea
@@ -501,14 +484,14 @@ const TemplateEditorModal = ({
                       value={template.footerText}
                       onChange={(e) => handleChange('footerText', e.target.value)}
                       rows={2}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth resize-none"
+                      className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="Footer message..."
                     />
                   </div>
 
                   {/* Footer Text (Arabic) */}
                   <div>
-                    <label htmlFor="footerTextAr" className="block text-sm font-medium text-text-primary mb-2">
+                    <label htmlFor="footerTextAr" className="mb-2 block text-sm font-medium text-text-primary">
                       Footer Text (Arabic) / نص التذييل
                     </label>
                     <textarea
@@ -517,16 +500,16 @@ const TemplateEditorModal = ({
                       onChange={(e) => handleChange('footerTextAr', e.target.value)}
                       dir="rtl"
                       rows={2}
-                      className="w-full px-4 py-3 bg-background border border-input rounded-md text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 transition-smooth resize-none"
+                      className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="نص التذييل هنا..."
                     />
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-3 pt-4 border-t border-border">
+                  <div className="flex items-center gap-3 border-t border-border pt-4">
                     <button
                       onClick={handleResetToDefault}
-                      className="px-4 py-2 text-text-secondary hover:text-text-primary transition-smooth rounded-md hover:bg-muted"
+                      className="transition-smooth rounded-md px-4 py-2 text-text-secondary hover:bg-muted hover:text-text-primary"
                       title="Reset to default template"
                     >
                       <Icon name="ArrowPathIcon" size={20} />
@@ -534,18 +517,18 @@ const TemplateEditorModal = ({
                     <div className="flex-1" />
                     <button
                       onClick={handleClose}
-                      className="px-6 py-3 bg-muted text-text-primary rounded-md font-medium transition-smooth hover:bg-muted/80 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+                      className="transition-smooth hover:bg-muted/80 rounded-md bg-muted px-6 py-3 font-medium text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium transition-smooth hover:bg-primary/90 shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="transition-smooth hover:bg-primary/90 active:scale-97 flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSaving ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
+                          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-foreground" />
                           <span>Saving...</span>
                         </>
                       ) : (
@@ -560,14 +543,14 @@ const TemplateEditorModal = ({
               </div>
 
               {/* Preview Panel */}
-              <div className="p-6 bg-muted overflow-y-auto">
+              <div className="overflow-y-auto bg-muted p-6">
                 <div className="sticky top-0 mb-4 bg-muted pb-2">
-                  <h3 className="text-lg font-semibold text-text-primary mb-1">Live Preview</h3>
+                  <h3 className="mb-1 text-lg font-semibold text-text-primary">Live Preview</h3>
                   <p className="text-sm text-text-secondary">WhatsApp Message Format</p>
                 </div>
 
                 <div
-                  className="bg-card rounded-lg shadow-warm-md overflow-hidden max-w-md mx-auto"
+                  className="mx-auto max-w-md overflow-hidden rounded-lg bg-card shadow-warm-md"
                   dir={template.language === 'ar' ? 'rtl' : 'ltr'}
                 >
                   {/* Header Image */}
@@ -576,29 +559,25 @@ const TemplateEditorModal = ({
                       <AppImage
                         src={template.headerImage}
                         alt="Invitation header image"
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="flex h-full w-full items-center justify-center">
                         <Icon name="PhotoIcon" size={48} className="text-text-secondary" />
                       </div>
                     )}
                   </div>
 
                   {/* Content */}
-                  <div className="p-6 space-y-4">
-                    <h2 className="text-2xl font-heading font-bold text-primary text-center">
-                      {previewContent.title}
-                    </h2>
+                  <div className="space-y-4 p-6">
+                    <h2 className="text-center font-heading text-2xl font-bold text-primary">{previewContent.title}</h2>
 
-                    <p className="text-text-primary leading-relaxed text-center">
-                      {previewContent.message}
-                    </p>
+                    <p className="text-center leading-relaxed text-text-primary">{previewContent.message}</p>
 
                     {/* Event Info Card */}
-                    <div className="bg-primary/10 rounded-lg p-4 space-y-3">
+                    <div className="bg-primary/10 space-y-3 rounded-lg p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
                           <Icon name="CalendarIcon" size={16} className="text-primary" />
                         </div>
                         <div>
@@ -609,7 +588,7 @@ const TemplateEditorModal = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
                           <Icon name="ClockIcon" size={16} className="text-primary" />
                         </div>
                         <div>
@@ -620,7 +599,7 @@ const TemplateEditorModal = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="bg-primary/20 flex h-8 w-8 items-center justify-center rounded-full">
                           <Icon name="MapPinIcon" size={16} className="text-primary" />
                         </div>
                         <div>
@@ -634,26 +613,24 @@ const TemplateEditorModal = ({
 
                     {/* QR Code Placeholder */}
                     <div className="flex justify-center py-4">
-                      <div className="w-32 h-32 bg-white rounded-lg flex flex-col items-center justify-center border-2 border-border">
+                      <div className="flex h-32 w-32 flex-col items-center justify-center rounded-lg border-2 border-border bg-white">
                         <Icon name="QrCodeIcon" size={64} className="text-primary" />
-                        <span className="text-xs text-text-secondary mt-1">RSVP Code</span>
+                        <span className="mt-1 text-xs text-text-secondary">RSVP Code</span>
                       </div>
                     </div>
 
                     {/* Footer */}
-                    <p className="text-xs text-text-secondary text-center">
-                      {previewContent.footerText}
-                    </p>
+                    <p className="text-center text-xs text-text-secondary">{previewContent.footerText}</p>
                   </div>
                 </div>
 
                 {/* Preview Tips */}
-                <div className="mt-6 p-4 bg-info/10 rounded-lg">
+                <div className="bg-info/10 mt-6 rounded-lg p-4">
                   <div className="flex items-start gap-2">
-                    <Icon name="LightBulbIcon" size={20} className="text-info flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-info">
-                      <p className="font-medium mb-1">Preview Tips:</p>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
+                    <Icon name="LightBulbIcon" size={20} className="text-info mt-0.5 flex-shrink-0" />
+                    <div className="text-info text-sm">
+                      <p className="mb-1 font-medium">Preview Tips:</p>
+                      <ul className="list-inside list-disc space-y-1 text-xs">
                         <li>This preview shows how your invitation will appear in WhatsApp</li>
                         <li>Toggle between English and Arabic to see both versions</li>
                         <li>QR codes will be unique for each guest</li>
@@ -667,7 +644,7 @@ const TemplateEditorModal = ({
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default TemplateEditorModal;
+export default TemplateEditorModal

@@ -1,35 +1,35 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
+import { useEffect, useState } from 'react'
 
 interface Guest {
-  id: string | number;
-  name: string;
-  phone: string;
-  email: string;
-  plusOnes: number;
-  notes?: string;
+  id: string | number
+  name: string
+  phone: string
+  email: string
+  plusOnes: number
+  notes?: string
 }
 
 interface AddGuestFormProps {
-  eventId: string;
-  token: string;
-  onSuccess: () => void;
-  onClose: () => void;
-  guestToUpdate?: Guest | null;
+  eventId: string
+  token: string
+  onSuccess: () => void
+  onClose: () => void
+  guestToUpdate?: Guest | null
 }
 
 const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: AddGuestFormProps) => {
-  const isUpdateMode = !!guestToUpdate;
-  
+  const isUpdateMode = !!guestToUpdate
+
   const [formData, setFormData] = useState({
-    name: guestToUpdate?.name ||'',
+    name: guestToUpdate?.name || '',
     phone: guestToUpdate?.phone || '',
     email: guestToUpdate?.email || '',
     plusOnes: String(guestToUpdate?.plusOnes || 0),
-    notes: guestToUpdate?.notes || ''
-  });
+    notes: guestToUpdate?.notes || '',
+  })
 
   // Update form data when guestToUpdate changes
   useEffect(() => {
@@ -39,65 +39,65 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
         phone: guestToUpdate.phone,
         email: guestToUpdate.email,
         plusOnes: String(guestToUpdate.plusOnes || 0),
-        notes: guestToUpdate.notes || ''
-      });
+        notes: guestToUpdate.notes || '',
+      })
     }
-  }, [guestToUpdate]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  }, [guestToUpdate])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({})
 
   const validateForm = (): boolean => {
-    const errors: {[key: string]: string} = {};
+    const errors: { [key: string]: string } = {}
 
     // Name validation
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
+      errors.name = 'Name is required'
     }
 
     // Phone validation
     if (!formData.phone.trim()) {
-      errors.phone = 'Phone number is required';
-    } else if (!/^\+?\d{10,15}$/.test(formData.phone.replace(/[\s\-\(\)\.]/g, ''))) {
-      errors.phone = 'Invalid phone format. Include country code (e.g., +966)';
+      errors.phone = 'Phone number is required'
+    } else if (!/^\+?\d{10,15}$/.test(formData.phone.replace(/[\s().-]/g, ''))) {
+      errors.phone = 'Invalid phone format. Include country code (e.g., +966)'
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format';
+      errors.email = 'Invalid email format'
     }
 
     // Plus ones validation
-    const plusOnesNum = parseInt(formData.plusOnes);
+    const plusOnesNum = parseInt(formData.plusOnes)
     if (isNaN(plusOnesNum) || plusOnesNum < 0) {
-      errors.plusOnes = 'Must be 0 or greater';
+      errors.plusOnes = 'Must be 0 or greater'
     }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
     if (!validateForm()) {
-      return;
+      return
     }
 
     if (!eventId && !isUpdateMode) {
-      setError('Please select an event first');
-      return;
+      setError('Please select an event first')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
-      const url = isUpdateMode ? '/api/guests/update' : '/api/guests/create';
-      const method = isUpdateMode ? 'PUT' : 'POST';
-      
+      const url = isUpdateMode ? '/api/guests/update' : '/api/guests/create'
+      const method = isUpdateMode ? 'PUT' : 'POST'
+
       const requestBody = isUpdateMode
         ? {
             guestId: guestToUpdate?.id,
@@ -114,22 +114,22 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
             email: formData.email.trim(),
             plusOnes: parseInt(formData.plusOnes) || 0,
             notes: formData.notes.trim() || null,
-          };
+          }
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || `Failed to ${isUpdateMode ? 'update' : 'add'} guest`);
-        return;
+        setError(data.error || `Failed to ${isUpdateMode ? 'update' : 'add'} guest`)
+        return
       }
 
       // Reset form
@@ -138,72 +138,67 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
         phone: '',
         email: '',
         plusOnes: '0',
-        notes: ''
-      });
+        notes: '',
+      })
 
       // Notify parent component
-      onSuccess();
-      onClose();
-
+      onSuccess()
+      onClose()
     } catch (err) {
-      console.error(`Error ${isUpdateMode ? 'updating' : 'adding'} guest:`, err);
-      setError('Network error. Please try again.');
+      console.error(`Error ${isUpdateMode ? 'updating' : 'adding'} guest:`, err)
+      setError('Network error. Please try again.')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear validation error for this field
     if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
     }
-  };
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-40 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full my-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black bg-opacity-50 p-4 pt-40">
+      <div className="my-4 w-full max-w-2xl rounded-lg bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between border-b border-gray-200 p-6">
           <div>
-            <h2 className="text-2xl font-heading font-semibold text-text-primary">
+            <h2 className="font-heading text-2xl font-semibold text-text-primary">
               {isUpdateMode ? 'Update Guest' : 'Add New Guest'}
             </h2>
-            <p className="text-sm text-text-secondary mt-1">
+            <p className="mt-1 text-sm text-text-secondary">
               {isUpdateMode ? 'Update guest information' : 'Manually add a single guest to your event'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="rounded-lg p-2 transition-colors hover:bg-gray-100"
             disabled={isSubmitting}
           >
-            <Icon 
-              name="XMarkIcon" 
-              className="w-6 h-6 text-gray-500"
-              ariaLabel="Close"
-            />
+            <Icon name="XMarkIcon" className="h-6 w-6 text-gray-500" ariaLabel="Close" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 p-6">
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
-              <Icon name="ExclamationCircleIcon" className="w-5 h-5 mt-0.5 flex-shrink-0" ariaLabel="Error" />
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+              <Icon name="ExclamationCircleIcon" className="mt-0.5 h-5 w-5 flex-shrink-0" ariaLabel="Error" />
               <span className="text-sm">{error}</span>
             </div>
           )}
 
           {/* Name Field */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-text-primary mb-2">
+            <label htmlFor="name" className="mb-2 block text-sm font-medium text-text-primary">
               Guest Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -211,20 +206,18 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               id="name"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               placeholder="e.g., Ahmed Al-Rashid"
               disabled={isSubmitting}
             />
-            {validationErrors.name && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-            )}
+            {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
           </div>
 
           {/* Phone Field */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-text-primary mb-2">
+            <label htmlFor="phone" className="mb-2 block text-sm font-medium text-text-primary">
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -232,23 +225,19 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               id="phone"
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               placeholder="e.g., +966 50 123 4567"
               disabled={isSubmitting}
             />
-            {validationErrors.phone && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
-            )}
-            <p className="mt-1 text-xs text-text-secondary">
-              Include country code (e.g., +966 for Saudi Arabia)
-            </p>
+            {validationErrors.phone && <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>}
+            <p className="mt-1 text-xs text-text-secondary">Include country code (e.g., +966 for Saudi Arabia)</p>
           </div>
 
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-text-primary mb-2">
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-text-primary">
               Email Address <span className="text-red-500">*</span>
             </label>
             <input
@@ -256,20 +245,18 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               id="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               placeholder="e.g., ahmed.rashid@email.com"
               disabled={isSubmitting}
             />
-            {validationErrors.email && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-            )}
+            {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
           </div>
 
           {/* Plus Ones Field */}
           <div>
-            <label htmlFor="plusOnes" className="block text-sm font-medium text-text-primary mb-2">
+            <label htmlFor="plusOnes" className="mb-2 block text-sm font-medium text-text-primary">
               Plus Ones (Companions)
             </label>
             <input
@@ -277,31 +264,27 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               id="plusOnes"
               value={formData.plusOnes}
               onChange={(e) => handleChange('plusOnes', e.target.value)}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.plusOnes ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               min="0"
               max="10"
               disabled={isSubmitting}
             />
-            {validationErrors.plusOnes && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.plusOnes}</p>
-            )}
-            <p className="mt-1 text-xs text-text-secondary">
-              Number of additional guests accompanying this person
-            </p>
+            {validationErrors.plusOnes && <p className="mt-1 text-sm text-red-600">{validationErrors.plusOnes}</p>}
+            <p className="mt-1 text-xs text-text-secondary">Number of additional guests accompanying this person</p>
           </div>
 
           {/* Notes Field */}
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-text-primary mb-2">
+            <label htmlFor="notes" className="mb-2 block text-sm font-medium text-text-primary">
               Special Notes
             </label>
             <textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => handleChange('notes', e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="focus:ring-primary-500 w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2"
               rows={3}
               placeholder="e.g., Dietary restrictions, seating preferences, etc."
               disabled={isSubmitting}
@@ -309,11 +292,11 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50"
               disabled={isSubmitting}
             >
               Cancel
@@ -321,16 +304,20 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
-                  <Icon name="ArrowPathIcon" className="w-4 h-4 animate-spin" ariaLabel="Loading" />
+                  <Icon name="ArrowPathIcon" className="h-4 w-4 animate-spin" ariaLabel="Loading" />
                   {isUpdateMode ? 'Updating...' : 'Adding...'}
                 </>
               ) : (
                 <>
-                  <Icon name={isUpdateMode ? "PencilSquareIcon" : "UserPlusIcon"} className="w-4 h-4" ariaLabel={isUpdateMode ? "Update" : "Add"} />
+                  <Icon
+                    name={isUpdateMode ? 'PencilSquareIcon' : 'UserPlusIcon'}
+                    className="h-4 w-4"
+                    ariaLabel={isUpdateMode ? 'Update' : 'Add'}
+                  />
                   {isUpdateMode ? 'Update Guest' : 'Add Guest'}
                 </>
               )}
@@ -339,7 +326,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AddGuestForm;
+export default AddGuestForm

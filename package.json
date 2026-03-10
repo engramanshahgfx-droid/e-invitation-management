@@ -59,8 +59,8 @@
     "next-intl": "^4.8.3",
     "react": "19.0.3",
     "react-dom": "19.0.3",
-    "react-paypal-js": "^8.5.0",
     "recharts": "^2.15.2",
+    "stripe": "^20.4.1",
     "twilio": "^4.0.0",
     "zod": "^3.23.0"
   },

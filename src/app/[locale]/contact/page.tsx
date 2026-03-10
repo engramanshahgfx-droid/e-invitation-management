@@ -1,43 +1,41 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import { useState } from 'react'
 
-export default function ContactPage({ params }: { params: { locale: string } }) {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+export default function ContactPage() {
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault()
+    setLoading(true)
 
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
-      });
+      })
 
       if (response.ok) {
-        setSuccess(true);
-        setForm({ name: '', email: '', message: '' });
-        setTimeout(() => setSuccess(false), 5000);
+        setSuccess(true)
+        setForm({ name: '', email: '', message: '' })
+        setTimeout(() => setSuccess(false), 5000)
       }
     } catch (error) {
-      console.error('Contact error:', error);
+      console.error('Contact error:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-20">
       <div className="mx-auto max-w-3xl px-6">
-        <div className="text-center mb-12">
+        <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold text-gray-900">Get in Touch</h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Have questions? We would love to hear from you.
-          </p>
+          <p className="mt-4 text-lg text-gray-600">Have questions? We would love to hear from you.</p>
         </div>
 
         <div className="rounded-lg bg-white p-12 shadow-lg">
@@ -106,5 +104,5 @@ export default function ContactPage({ params }: { params: { locale: string } }) 
         </div>
       </div>
     </div>
-  );
+  )
 }

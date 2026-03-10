@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabase'
 
 // Send email OTP via SendGrid (server-side API route)
 export async function sendOTP(email: string) {
@@ -6,29 +6,24 @@ export async function sendOTP(email: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to send verification code');
-  return data;
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to send verification code')
+  return data
 }
 
 // Verify email OTP and create account (server-side API route)
-export async function verifyOTPAndRegister(
-  email: string,
-  code: string,
-  fullName?: string,
-  phone?: string
-) {
+export async function verifyOTPAndRegister(email: string, code: string, fullName?: string, phone?: string) {
   const res = await fetch('/api/auth/verify-otp', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, code, fullName, phone }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Verification failed');
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Verification failed')
 
   if (data.existingUser) {
-    throw new Error('Account already exists. Please sign in instead.');
+    throw new Error('Account already exists. Please sign in instead.')
   }
 
   // Auto sign-in with the temp password
@@ -36,13 +31,13 @@ export async function verifyOTPAndRegister(
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: data.tempPassword,
-    });
+    })
     if (error) {
-      console.warn('Auto sign-in failed:', error.message);
+      console.warn('Auto sign-in failed:', error.message)
     }
   }
 
-  return data;
+  return data
 }
 
 export async function signUpUser(email: string, password: string, fullName?: string) {
@@ -56,10 +51,10 @@ export async function signUpUser(email: string, password: string, fullName?: str
           full_name: fullName || '',
         },
       },
-    });
+    })
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('User creation failed');
+    if (authError) throw authError
+    if (!authData.user) throw new Error('User creation failed')
 
     // Create free user profile
     const { error: profileError } = await (supabase as any).from('users').insert([
@@ -73,16 +68,16 @@ export async function signUpUser(email: string, password: string, fullName?: str
         event_limit: 1,
         guest_limit: 50,
       },
-    ]);
+    ])
 
     if (profileError) {
-      console.warn('Could not create user profile (table may not exist):', profileError.message);
+      console.warn('Could not create user profile (table may not exist):', profileError.message)
     }
 
-    return { user: authData.user, session: authData.session };
+    return { user: authData.user, session: authData.session }
   } catch (error) {
-    console.error('Sign up error:', error);
-    throw error;
+    console.error('Sign up error:', error)
+    throw error
   }
 }
 
@@ -91,76 +86,69 @@ export async function signInUser(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    });
+    })
 
-    if (error) throw error;
+    if (error) throw error
 
-    return { user: data.user, session: data.session };
+    return { user: data.user, session: data.session }
   } catch (error) {
-    console.error('Sign in error:', error);
-    throw error;
+    console.error('Sign in error:', error)
+    throw error
   }
 }
 
 export async function signOutUser() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
 export async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return data.user;
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  return data.user
 }
 
 export async function getCurrentSession() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  return data.session
 }
 
 export async function getUserProfile(userId: string) {
-  const { data, error } = await (supabase as any)
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  const { data, error } = await (supabase as any).from('users').select('*').eq('id', userId).single()
 
-  if (error) throw error;
-  return data as any;
+  if (error) throw error
+  return data as any
 }
 
 export async function updateUserProfile(userId: string, updates: any) {
-  const { data, error } = await (supabase as any)
-    .from('users')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single();
+  const { data, error } = await (supabase as any).from('users').update(updates).eq('id', userId).select().single()
 
-  if (error) throw error;
-  return data as any;
+  if (error) throw error
+  return data as any
 }
 
 export async function checkSubscriptionStatus(userId: string) {
   try {
     const { data, error } = await (supabase as any)
       .from('users')
-      .select('subscription_status, plan_type, subscription_expiry, account_type, demo_expiry, event_limit, guest_limit')
+      .select(
+        'subscription_status, plan_type, subscription_expiry, account_type, demo_expiry, event_limit, guest_limit'
+      )
       .eq('id', userId)
-      .single();
+      .single()
 
-    if (error) throw error;
+    if (error) throw error
 
-    const accountType = (data as any).account_type || 'free';
-    const isFree = accountType === 'free';
-    const isPaid = accountType === 'paid';
-    const subscriptionStatus = (data as any).subscription_status;
+    const accountType = (data as any).account_type || 'free'
+    const isFree = accountType === 'free'
+    const isPaid = accountType === 'paid'
+    const subscriptionStatus = (data as any).subscription_status
 
-    const isActive = 
+    const isActive =
       subscriptionStatus === 'trial' ||
-      (subscriptionStatus === 'active' && 
-      (!(data as any).subscription_expiry || new Date((data as any).subscription_expiry) > new Date()));
+      (subscriptionStatus === 'active' &&
+        (!(data as any).subscription_expiry || new Date((data as any).subscription_expiry) > new Date()))
 
     return {
       isActive,
@@ -173,10 +161,21 @@ export async function checkSubscriptionStatus(userId: string) {
       demoExpiry: (data as any).demo_expiry,
       eventLimit: (data as any).event_limit ?? (isFree ? 1 : null),
       guestLimit: (data as any).guest_limit ?? (isFree ? 50 : null),
-    };
+    }
   } catch (error) {
-    console.error('Error checking subscription:', error);
-    return { isActive: true, isFree: true, isPaid: false, status: 'trial', plan: 'free', accountType: 'free', expiryDate: null, demoExpiry: null, eventLimit: 1, guestLimit: 50 };
+    console.error('Error checking subscription:', error)
+    return {
+      isActive: true,
+      isFree: true,
+      isPaid: false,
+      status: 'trial',
+      plan: 'free',
+      accountType: 'free',
+      expiryDate: null,
+      demoExpiry: null,
+      eventLimit: 1,
+      guestLimit: 50,
+    }
   }
 }
 
@@ -185,8 +184,8 @@ export async function getSubscriptionPlans() {
     .from('subscription_plans')
     .select('*')
     .eq('is_active', true)
-    .order('display_order', { ascending: true });
+    .order('display_order', { ascending: true })
 
-  if (error) throw error;
-  return data as any;
+  if (error) throw error
+  return data as any
 }

@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { Database } from '@/types/database'
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
 
 // Create a single supabase client for the entire app
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -12,16 +12,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
   },
-});
+})
 
 // Check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  return (
-    supabaseUrl &&
-    supabaseAnonKey &&
-    !supabaseUrl.includes('dummy') &&
-    !supabaseAnonKey.includes('dummy')
-  );
-};
+  return supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('dummy') && !supabaseAnonKey.includes('dummy')
+}
 
-export default supabase;
+export default supabase

@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import Icon from '@/components/ui/AppIcon';
+import Icon from '@/components/ui/AppIcon'
 
 interface BulkActionsBarProps {
-  selectedCount: number;
-  onSendWhatsApp: () => void;
-  onUpdateStatus: () => void;
-  onExportExcel: () => void;
-  onGenerateQRCodes: () => void;
-  onDeselectAll: () => void;
+  selectedCount: number
+  onSendWhatsApp: () => void
+  onUpdateStatus: () => void
+  onExportExcel: () => void
+  onGenerateQRCodes: () => void
+  onDeselectAll: () => void
 }
 
 const BulkActionsBar = ({
@@ -19,10 +19,10 @@ const BulkActionsBar = ({
   onGenerateQRCodes,
   onDeselectAll,
 }: BulkActionsBarProps) => {
-  if (selectedCount === 0) return null;
+  if (selectedCount === 0) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-primary text-primary-foreground shadow-warm-xl z-100 animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 z-100 animate-slide-up bg-primary text-primary-foreground shadow-warm-xl">
       <div className="px-8 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -32,62 +32,62 @@ const BulkActionsBar = ({
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             <button
               onClick={onSendWhatsApp}
-              className="flex items-center gap-2 px-4 py-2 bg-success text-success-foreground rounded-md transition-smooth hover:bg-success/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97"
+              className="transition-smooth hover:bg-success/90 active:scale-97 flex items-center gap-2 rounded-md bg-success px-4 py-2 text-success-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
             >
               <Icon name="ChatBubbleLeftRightIcon" size={16} />
               <span className="text-sm font-medium">Send WhatsApp</span>
             </button>
             <button
               onClick={onUpdateStatus}
-              className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md transition-smooth hover:bg-secondary/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97"
+              className="transition-smooth hover:bg-secondary/90 active:scale-97 flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-secondary-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
             >
               <Icon name="PencilSquareIcon" size={16} />
               <span className="text-sm font-medium">Update Status</span>
             </button>
             <button
               onClick={onExportExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-md transition-smooth hover:bg-accent/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97"
+              className="transition-smooth hover:bg-accent/90 active:scale-97 flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-accent-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
             >
               <Icon name="DocumentArrowDownIcon" size={16} />
               <span className="text-sm font-medium">Export Excel</span>
             </button>
             <button
               onClick={onGenerateQRCodes}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-foreground text-primary rounded-md transition-smooth hover:bg-primary-foreground/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97"
+              className="transition-smooth hover:bg-primary-foreground/90 active:scale-97 flex items-center gap-2 rounded-md bg-primary-foreground px-4 py-2 text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
             >
               <Icon name="QrCodeIcon" size={16} />
               <span className="text-sm font-medium">Generate QR Codes</span>
             </button>
             <button
               onClick={onDeselectAll}
-              className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md transition-smooth hover:bg-destructive/90 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 active:scale-97"
+              className="transition-smooth hover:bg-destructive/90 active:scale-97 flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
             >
               <Icon name="XMarkIcon" size={16} />
               <span className="text-sm font-medium">Deselect All</span>
             </button>
           </div>
 
-          <div className="md:hidden flex items-center gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={onSendWhatsApp}
-              className="p-2 bg-success text-success-foreground rounded-md transition-smooth hover:bg-success/90 active:scale-97"
+              className="transition-smooth hover:bg-success/90 active:scale-97 rounded-md bg-success p-2 text-success-foreground"
               aria-label="Send WhatsApp"
             >
               <Icon name="ChatBubbleLeftRightIcon" size={20} />
             </button>
             <button
               onClick={onExportExcel}
-              className="p-2 bg-accent text-accent-foreground rounded-md transition-smooth hover:bg-accent/90 active:scale-97"
+              className="transition-smooth hover:bg-accent/90 active:scale-97 rounded-md bg-accent p-2 text-accent-foreground"
               aria-label="Export Excel"
             >
               <Icon name="DocumentArrowDownIcon" size={20} />
             </button>
             <button
               onClick={onDeselectAll}
-              className="p-2 bg-destructive text-destructive-foreground rounded-md transition-smooth hover:bg-destructive/90 active:scale-97"
+              className="transition-smooth hover:bg-destructive/90 active:scale-97 rounded-md bg-destructive p-2 text-destructive-foreground"
               aria-label="Deselect All"
             >
               <Icon name="XMarkIcon" size={20} />
@@ -96,7 +96,7 @@ const BulkActionsBar = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BulkActionsBar;
+export default BulkActionsBar
