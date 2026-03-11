@@ -1,6 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
+import { getCurrentUser } from '@/lib/auth'
 import { useEffect, useState } from 'react'
 
 interface StatusMetric {
@@ -13,54 +14,88 @@ interface StatusMetric {
 
 interface StatusIndicatorBarProps {
   className?: string
+  eventId?: string
 }
 
-const StatusIndicatorBar = ({ className = '' }: StatusIndicatorBarProps) => {
+const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps) => {
   const [metrics, setMetrics] = useState<StatusMetric[]>([
     {
       label: 'Invitations Sent',
       labelAr: 'الدعوات المرسلة',
-      value: 245,
+      value: 0,
       icon: 'PaperAirplaneIcon',
       color: 'primary',
     },
     {
       label: 'Confirmed Guests',
       labelAr: 'الضيوف المؤكدون',
-      value: 187,
+      value: 0,
       icon: 'CheckCircleIcon',
       color: 'success',
     },
     {
       label: 'Pending Responses',
       labelAr: 'الردود المعلقة',
-      value: 58,
+      value: 0,
       icon: 'ClockIcon',
       color: 'warning',
     },
     {
       label: 'Checked In',
       labelAr: 'تم تسجيل الحضور',
-      value: 142,
+      value: 0,
       icon: 'UserGroupIcon',
       color: 'accent',
     },
   ])
 
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Fetch event statistics
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics((prev) =>
-        prev.map((metric) => ({
-          ...metric,
-          value: metric.value + Math.floor(Math.random() * 3),
-        }))
-      )
-    }, 5000)
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true)
+        const user = await getCurrentUser()
+        if (!user?.id) {
+          setIsLoading(false)
+          return
+        }
+
+        const params = new URLSearchParams({
+          userId: user.id,
+        })
+
+        if (eventId) {
+          params.append('eventId', eventId)
+        }
+
+        const response = await fetch(`/api/events/statistics?${params.toString()}`)
+        if (response.ok) {
+          const stats = await response.json()
+
+          setMetrics((prev) => [
+            { ...prev[0], value: stats.invitationsSent || 0 },
+            { ...prev[1], value: stats.confirmedGuests || 0 },
+            { ...prev[2], value: stats.pendingResponses || 0 },
+            { ...prev[3], value: stats.checkedIn || 0 },
+          ])
+        }
+      } catch (error) {
+        console.error('Error fetching statistics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStats()
+
+    // Refresh stats every 10 seconds
+    const interval = setInterval(fetchStats, 10000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [eventId])
 
   const getColorClasses = (color: StatusMetric['color']) => {
     const colorMap = {

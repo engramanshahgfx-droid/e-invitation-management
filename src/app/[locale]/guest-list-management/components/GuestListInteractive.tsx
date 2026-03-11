@@ -38,7 +38,11 @@ interface FilterState {
   searchQuery: string
 }
 
-const GuestListInteractive = () => {
+interface GuestListInteractiveProps {
+  onEventSelected?: (eventId: string) => void
+}
+
+const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) => {
   const [isHydrated, setIsHydrated] = useState(false)
   const [guests, setGuests] = useState<Guest[]>([])
   const [filteredGuests, setFilteredGuests] = useState<Guest[]>([])
@@ -168,11 +172,18 @@ const GuestListInteractive = () => {
   useEffect(() => {
     if (selectedEventId && token) {
       fetchGuests(selectedEventId)
+      // Notify parent component of selected event change
+      if (onEventSelected) {
+        onEventSelected(selectedEventId)
+      }
     } else {
       setGuests([])
       setFilteredGuests([])
+      if (onEventSelected) {
+        onEventSelected('')
+      }
     }
-  }, [selectedEventId, token])
+  }, [selectedEventId, token, onEventSelected])
 
   useEffect(() => {
     if (!isHydrated) return

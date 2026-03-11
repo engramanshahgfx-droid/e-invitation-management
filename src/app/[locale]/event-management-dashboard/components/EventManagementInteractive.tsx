@@ -1,5 +1,6 @@
 'use client'
 
+import UpgradeModal from '@/components/common/UpgradeModal'
 import Icon from '@/components/ui/AppIcon'
 import { getCurrentSession, getCurrentUser } from '@/lib/auth'
 import { useEffect, useState } from 'react'
@@ -85,6 +86,8 @@ const EventManagementInteractive = () => {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventFormData | null>(null)
   const [templateEventId, setTemplateEventId] = useState<string | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeature, setUpgradeFeature] = useState('additional events')
 
   // Fetch current user and events
   useEffect(() => {
@@ -211,6 +214,14 @@ const EventManagementInteractive = () => {
     }
   }
 
+  const handleEventLimitReached = (message?: string) => {
+    setUpgradeFeature('additional events')
+    setShowUpgradeModal(true)
+    setIsCreateModalOpen(false)
+    setEditingEvent(null)
+    setError(message || 'Upgrade your plan to create more events.')
+  }
+
   if (!isHydrated || (isLoading && events.length === 0)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
@@ -312,6 +323,11 @@ const EventManagementInteractive = () => {
 
         if (!response.ok) {
           const errorData = await response.json()
+
+          if (response.status === 403 && errorData.code === 'EVENT_LIMIT_REACHED') {
+            handleEventLimitReached(errorData.error)
+          }
+
           throw new Error(errorData.error || 'Failed to create event')
         }
 
@@ -388,7 +404,13 @@ const EventManagementInteractive = () => {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to duplicate event')
+        const errorData = await response.json()
+
+        if (response.status === 403 && errorData.code === 'EVENT_LIMIT_REACHED') {
+          handleEventLimitReached(errorData.error)
+        }
+
+        throw new Error(errorData.error || 'Failed to duplicate event')
       }
 
       const newEvent = await response.json()
@@ -726,6 +748,15 @@ const EventManagementInteractive = () => {
             : undefined
         }
       />
+
+      {showUpgradeModal && (
+        <UpgradeModal
+          feature={upgradeFeature}
+          onClose={() => {
+            setShowUpgradeModal(false)
+          }}
+        />
+      )}
     </div>
   )
 }

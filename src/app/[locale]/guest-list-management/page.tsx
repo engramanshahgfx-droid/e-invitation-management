@@ -1,22 +1,20 @@
+'use client'
+
 import Header from '@/components/common/Header'
 import QuickActionToolbar from '@/components/common/QuickActionToolbar'
 import StatusIndicatorBar from '@/components/common/StatusIndicatorBar'
 import UserAuthGuard from '@/components/UserAuthGuard'
-import type { Metadata } from 'next'
+import { useState } from 'react'
 import GuestListInteractive from './components/GuestListInteractive'
 
-export const metadata: Metadata = {
-  title: 'Guest List Management - InviteFlow',
-  description:
-    'Comprehensive guest administration with real-time status tracking, WhatsApp delivery management, and bulk operations for event coordination.',
-}
-
 export default function GuestListManagementPage() {
+  const [selectedEventId, setSelectedEventId] = useState<string>('')
+
   return (
     <UserAuthGuard>
       <div className="min-h-screen bg-background">
         <Header />
-        <StatusIndicatorBar className="mt-20" />
+        <StatusIndicatorBar className="mt-20" eventId={selectedEventId} />
 
         <main className="px-8 py-8">
           <div className="mx-auto max-w-[1600px]">
@@ -30,7 +28,7 @@ export default function GuestListManagementPage() {
               <QuickActionToolbar />
             </div>
 
-            <GuestListInteractive />
+            <GuestListInteractive onEventSelected={setSelectedEventId} />
           </div>
         </main>
       </div>

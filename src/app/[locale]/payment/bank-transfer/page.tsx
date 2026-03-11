@@ -414,7 +414,7 @@ export default function BankTransferPage() {
                 </div>
 
                 <button
-                  onClick={() => router.push(`/${locale}/dashboard`)}
+                  onClick={() => router.push(`/${locale}/event-management-dashboard`)}
                   className="mt-8 w-full rounded-lg bg-blue-600 px-6 py-3 text-center font-bold text-white hover:bg-blue-700"
                 >
                   Go to Dashboard
