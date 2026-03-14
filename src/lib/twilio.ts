@@ -161,12 +161,6 @@ export async function sendBulkWhatsAppTemplates(
   return { results, errors }
 }
 
-/**
- * Get the Twilio Sandbox WhatsApp invitation template SID
- * Template: "Appointment Reminders" - "Your appointment is coming up on {{1}} at {{2}}..."
- * SID can be found in Twilio Console > Messaging > Content Template Builder
- * For production, use your approved template instead
- */
 export function getInvitationTemplateConfig(): { contentSid: string; templateName: string } {
   const templateSid = process.env.TWILIO_INVITATION_TEMPLATE_SID || 'HXb5b62575e6e4ff6129ad7c8efe1f983e'
   return {
@@ -252,10 +246,8 @@ export async function getLatestWhatsAppStatusForRecipient(toPhoneNumber: string)
 }
 
 export function formatPhoneNumber(phone: string): string {
-  // Remove any non-digit characters except leading +
   const cleaned = phone.replace(/[^\d+]/g, '')
-
-  // If it doesn't start with +, add the country code for KSA as default
+  
   if (!cleaned.startsWith('+')) {
     return `+966${cleaned.slice(-9)}`
   }
@@ -286,7 +278,7 @@ export function getWhatsAppSenderInfo(): { sender: string | null; isSandbox: boo
   }
 }
 
-// ── Twilio Verify (OTP) ──────────────────────────────────────────────────────
+// ── Twilio Verify (OTP) 
 
 export async function sendOTP(toPhoneNumber: string): Promise<{ success: boolean; error?: string }> {
   try {

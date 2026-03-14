@@ -186,15 +186,15 @@ A: Check webhook is receiving events in Stripe Dashboard
 4. **Set up monitoring** - Add Sentry or similar
 5. **Deploy** - Push to Vercel with production keys
 
+
+
 ---
-
 ## Support Resources
-
 - 📚 [Supabase Docs](https://supabase.com/docs)
 - 💳 [Stripe Docs](https://stripe.com/docs)
 - 📱 [Twilio WhatsApp](https://www.twilio.com/docs/whatsapp)
 - ⚙️ [Next.js Docs](https://nextjs.org/docs)
-
 ---
+
 
 **Ready to go!** 🎉 Start with npm run dev and test the full flow.

@@ -18,9 +18,7 @@ const config = {
   singleQuote: true,
   printWidth: 120,
   trailingComma: 'es5',
-  // tailwindFunctions: ['clsx', 'tw'],
   ...(plugins.length > 0 ? { plugins } : {}),
-  // tailwindStylesheet: './src/styles/tailwind.css',
 }
 
 export default config
