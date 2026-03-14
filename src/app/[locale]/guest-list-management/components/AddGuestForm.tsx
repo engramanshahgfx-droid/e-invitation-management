@@ -1,6 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 
 interface Guest {
@@ -21,6 +22,8 @@ interface AddGuestFormProps {
 }
 
 const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: AddGuestFormProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const isUpdateMode = !!guestToUpdate
 
   const [formData, setFormData] = useState({
@@ -52,27 +55,27 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
 
     // Name validation
     if (!formData.name.trim()) {
-      errors.name = 'Name is required'
+      errors.name = isArabic ? 'الاسم مطلوب' : 'Name is required'
     }
 
     // Phone validation
     if (!formData.phone.trim()) {
-      errors.phone = 'Phone number is required'
+      errors.phone = isArabic ? 'رقم الجوال مطلوب' : 'Phone number is required'
     } else if (!/^\+?\d{10,15}$/.test(formData.phone.replace(/[\s().-]/g, ''))) {
-      errors.phone = 'Invalid phone format. Include country code (e.g., +966)'
+      errors.phone = isArabic ? 'صيغة رقم الجوال غير صحيحة. أضف رمز الدولة مثل +966' : 'Invalid phone format. Include country code (e.g., +966)'
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      errors.email = 'Email is required'
+      errors.email = isArabic ? 'البريد الإلكتروني مطلوب' : 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format'
+      errors.email = isArabic ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format'
     }
 
     // Plus ones validation
     const plusOnesNum = parseInt(formData.plusOnes)
     if (isNaN(plusOnesNum) || plusOnesNum < 0) {
-      errors.plusOnes = 'Must be 0 or greater'
+      errors.plusOnes = isArabic ? 'يجب أن يكون 0 أو أكثر' : 'Must be 0 or greater'
     }
 
     setValidationErrors(errors)
@@ -88,7 +91,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
     }
 
     if (!eventId && !isUpdateMode) {
-      setError('Please select an event first')
+      setError(isArabic ? 'يرجى اختيار فعالية أولاً' : 'Please select an event first')
       return
     }
 
@@ -128,7 +131,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || `Failed to ${isUpdateMode ? 'update' : 'add'} guest`)
+        setError(data.error || (isArabic ? `فشل ${isUpdateMode ? 'تحديث' : 'إضافة'} الضيف` : `Failed to ${isUpdateMode ? 'update' : 'add'} guest`))
         return
       }
 
@@ -146,7 +149,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
       onClose()
     } catch (err) {
       console.error(`Error ${isUpdateMode ? 'updating' : 'adding'} guest:`, err)
-      setError('Network error. Please try again.')
+      setError(isArabic ? 'خطأ في الشبكة. حاول مرة أخرى.' : 'Network error. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -171,10 +174,16 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
         <div className="flex items-center justify-between border-b border-gray-200 p-6">
           <div>
             <h2 className="font-heading text-2xl font-semibold text-text-primary">
-              {isUpdateMode ? 'Update Guest' : 'Add New Guest'}
+              {isUpdateMode ? (isArabic ? 'تحديث الضيف' : 'Update Guest') : isArabic ? 'إضافة ضيف جديد' : 'Add New Guest'}
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              {isUpdateMode ? 'Update guest information' : 'Manually add a single guest to your event'}
+              {isUpdateMode
+                ? isArabic
+                  ? 'تحديث معلومات الضيف'
+                  : 'Update guest information'
+                : isArabic
+                  ? 'أضف ضيفًا واحدًا إلى فعاليتك يدويًا'
+                  : 'Manually add a single guest to your event'}
             </p>
           </div>
           <button
@@ -199,7 +208,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
           {/* Name Field */}
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-medium text-text-primary">
-              Guest Name <span className="text-red-500">*</span>
+              {isArabic ? 'اسم الضيف' : 'Guest Name'} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -209,7 +218,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
-              placeholder="e.g., Ahmed Al-Rashid"
+              placeholder={isArabic ? 'مثال: أحمد الراشد' : 'e.g., Ahmed Al-Rashid'}
               disabled={isSubmitting}
             />
             {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
@@ -218,7 +227,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
           {/* Phone Field */}
           <div>
             <label htmlFor="phone" className="mb-2 block text-sm font-medium text-text-primary">
-              Phone Number <span className="text-red-500">*</span>
+              {isArabic ? 'رقم الجوال' : 'Phone Number'} <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -228,17 +237,17 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
-              placeholder="e.g., +966 50 123 4567"
+              placeholder={isArabic ? 'مثال: +966 50 123 4567' : 'e.g., +966 50 123 4567'}
               disabled={isSubmitting}
             />
             {validationErrors.phone && <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>}
-            <p className="mt-1 text-xs text-text-secondary">Include country code (e.g., +966 for Saudi Arabia)</p>
+            <p className="mt-1 text-xs text-text-secondary">{isArabic ? 'أدخل رمز الدولة مثل +966 للسعودية' : 'Include country code (e.g., +966 for Saudi Arabia)'}</p>
           </div>
 
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="mb-2 block text-sm font-medium text-text-primary">
-              Email Address <span className="text-red-500">*</span>
+              {isArabic ? 'البريد الإلكتروني' : 'Email Address'} <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -248,7 +257,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               className={`focus:ring-primary-500 w-full rounded-lg border px-4 py-2.5 focus:outline-none focus:ring-2 ${
                 validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
-              placeholder="e.g., ahmed.rashid@email.com"
+              placeholder={isArabic ? 'مثال: ahmed.rashid@email.com' : 'e.g., ahmed.rashid@email.com'}
               disabled={isSubmitting}
             />
             {validationErrors.email && <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>}
@@ -257,7 +266,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
           {/* Plus Ones Field */}
           <div>
             <label htmlFor="plusOnes" className="mb-2 block text-sm font-medium text-text-primary">
-              Plus Ones (Companions)
+              {isArabic ? 'المرافقون' : 'Plus Ones (Companions)'}
             </label>
             <input
               type="number"
@@ -272,13 +281,13 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               disabled={isSubmitting}
             />
             {validationErrors.plusOnes && <p className="mt-1 text-sm text-red-600">{validationErrors.plusOnes}</p>}
-            <p className="mt-1 text-xs text-text-secondary">Number of additional guests accompanying this person</p>
+            <p className="mt-1 text-xs text-text-secondary">{isArabic ? 'عدد الضيوف المرافقين لهذا الشخص' : 'Number of additional guests accompanying this person'}</p>
           </div>
 
           {/* Notes Field */}
           <div>
             <label htmlFor="notes" className="mb-2 block text-sm font-medium text-text-primary">
-              Special Notes
+              {isArabic ? 'ملاحظات خاصة' : 'Special Notes'}
             </label>
             <textarea
               id="notes"
@@ -286,7 +295,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               onChange={(e) => handleChange('notes', e.target.value)}
               className="focus:ring-primary-500 w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2"
               rows={3}
-              placeholder="e.g., Dietary restrictions, seating preferences, etc."
+              placeholder={isArabic ? 'مثال: قيود غذائية أو تفضيلات الجلوس وغيرها' : 'e.g., Dietary restrictions, seating preferences, etc.'}
               disabled={isSubmitting}
             />
           </div>
@@ -299,7 +308,7 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               className="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {isArabic ? 'إلغاء' : 'Cancel'}
             </button>
             <button
               type="submit"
@@ -309,16 +318,16 @@ const AddGuestForm = ({ eventId, token, onSuccess, onClose, guestToUpdate }: Add
               {isSubmitting ? (
                 <>
                   <Icon name="ArrowPathIcon" className="h-4 w-4 animate-spin" ariaLabel="Loading" />
-                  {isUpdateMode ? 'Updating...' : 'Adding...'}
+                  {isUpdateMode ? (isArabic ? 'جارٍ التحديث...' : 'Updating...') : isArabic ? 'جارٍ الإضافة...' : 'Adding...'}
                 </>
               ) : (
                 <>
                   <Icon
                     name={isUpdateMode ? 'PencilSquareIcon' : 'UserPlusIcon'}
                     className="h-4 w-4"
-                    ariaLabel={isUpdateMode ? 'Update' : 'Add'}
+                    ariaLabel={isUpdateMode ? (isArabic ? 'تحديث' : 'Update') : isArabic ? 'إضافة' : 'Add'}
                   />
-                  {isUpdateMode ? 'Update Guest' : 'Add Guest'}
+                  {isUpdateMode ? (isArabic ? 'تحديث الضيف' : 'Update Guest') : isArabic ? 'إضافة ضيف' : 'Add Guest'}
                 </>
               )}
             </button>

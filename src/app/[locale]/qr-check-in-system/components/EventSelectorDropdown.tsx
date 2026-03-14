@@ -1,86 +1,73 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
-import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
+import { useMemo, useState } from 'react'
 
-interface Event {
-  id: number
-  name: string
-  nameAr: string
+export interface QRCheckInEvent {
+  id: string
   date: string
   venue: string
   totalGuests: number
   checkedIn: number
-  status: 'active' | 'upcoming' | 'completed'
+  status?: string | null
+  name: string
 }
 
 interface EventSelectorDropdownProps {
-  onEventChange: (eventId: number) => void
+  events: QRCheckInEvent[]
+  selectedEventId: string
+  onEventChange: (eventId: string) => void
+  isLoading?: boolean
   className?: string
 }
 
-const EventSelectorDropdown = ({ onEventChange, className = '' }: EventSelectorDropdownProps) => {
-  const [isHydrated, setIsHydrated] = useState(false)
+const EventSelectorDropdown = ({ events, selectedEventId, onEventChange, isLoading = false, className = '' }: EventSelectorDropdownProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
 
-  const events: Event[] = [
-    {
-      id: 1,
-      name: 'Wedding - Sarah & Ahmed',
-      nameAr: 'حفل زفاف - سارة وأحمد',
-      date: '2026-03-15',
-      venue: 'Grand Ballroom, Riyadh',
-      totalGuests: 245,
-      checkedIn: 142,
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Corporate Gala 2026',
-      nameAr: 'حفل الشركة 2026',
-      date: '2026-04-20',
-      venue: 'Convention Center, Jeddah',
-      totalGuests: 500,
-      checkedIn: 0,
-      status: 'upcoming',
-    },
-    {
-      id: 3,
-      name: 'Birthday - Mohammed',
-      nameAr: 'عيد ميلاد - محمد',
-      date: '2026-05-10',
-      venue: 'Private Villa, Dammam',
-      totalGuests: 150,
-      checkedIn: 0,
-      status: 'upcoming',
-    },
-  ]
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.id === selectedEventId) || events[0] || null,
+    [events, selectedEventId]
+  )
 
-  useEffect(() => {
-    setIsHydrated(true)
-    setSelectedEvent(events[0])
-  }, [])
-
-  const handleEventSelect = (event: Event) => {
-    setSelectedEvent(event)
+  const handleEventSelect = (event: QRCheckInEvent) => {
     setIsOpen(false)
     onEventChange(event.id)
   }
 
-  const getStatusBadge = (status: Event['status']) => {
-    const badges = {
-      active: { label: 'Active', color: 'bg-success/10 text-success' },
-      upcoming: { label: 'Upcoming', color: 'bg-warning/10 text-warning' },
-      completed: { label: 'Completed', color: 'bg-muted text-text-secondary' },
+  const formatEventDate = (date: string) => {
+    try {
+      return new Date(date).toLocaleDateString(isArabic ? 'ar-SA' : 'en-GB')
+    } catch {
+      return date
     }
-    return badges[status]
   }
 
-  if (!isHydrated || !selectedEvent) {
+  const getStatusBadge = (status?: string | null) => {
+    const badges = {
+      active: { label: isArabic ? 'نشط' : 'Active', color: 'bg-success/10 text-success' },
+      ongoing: { label: isArabic ? 'جاري' : 'Active', color: 'bg-success/10 text-success' },
+      upcoming: { label: isArabic ? 'قادم' : 'Upcoming', color: 'bg-warning/10 text-warning' },
+      draft: { label: isArabic ? 'مسودة' : 'Draft', color: 'bg-warning/10 text-warning' },
+      completed: { label: isArabic ? 'منتهي' : 'Completed', color: 'bg-muted text-text-secondary' },
+    }
+    return badges[(status || 'upcoming') as keyof typeof badges] || badges.upcoming
+  }
+
+  if (isLoading) {
     return (
       <div className={`rounded-lg bg-card p-4 shadow-warm-md ${className}`}>
         <div className="h-12 animate-pulse rounded bg-muted" />
+      </div>
+    )
+  }
+
+  if (!selectedEvent) {
+    return (
+      <div className={`rounded-lg bg-card p-4 shadow-warm-md ${className}`}>
+        <p className="text-sm text-text-secondary">{isArabic ? 'لا توجد فعاليات متاحة' : 'No events available'}</p>
       </div>
     )
   }
@@ -91,7 +78,7 @@ const EventSelectorDropdown = ({ onEventChange, className = '' }: EventSelectorD
         onClick={() => setIsOpen(!isOpen)}
         className="transition-smooth flex w-full items-center justify-between rounded-lg bg-card px-6 py-4 shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring"
         aria-expanded={isOpen}
-        aria-label="Select event"
+        aria-label={isArabic ? 'اختر فعالية' : 'Select event'}
       >
         <div className="flex items-center gap-4">
           <div className="bg-primary/10 rounded-md p-2">
@@ -99,14 +86,18 @@ const EventSelectorDropdown = ({ onEventChange, className = '' }: EventSelectorD
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-text-primary">{selectedEvent.name}</h3>
+              <h3 className="text-lg font-semibold text-text-primary">
+                {selectedEvent.name}
+              </h3>
               <span
                 className={`rounded-full px-2 py-1 text-xs ${getStatusBadge(selectedEvent.status).color} font-medium`}
               >
                 {getStatusBadge(selectedEvent.status).label}
               </span>
             </div>
-            <p className="text-sm text-text-secondary">{selectedEvent.nameAr}</p>
+            <p className="text-sm text-text-secondary">
+              {selectedEvent.venue}
+            </p>
             <div className="mt-1 flex items-center gap-4 text-xs text-text-secondary">
               <span className="flex items-center gap-1">
                 <Icon name="MapPinIcon" size={14} />
@@ -144,8 +135,10 @@ const EventSelectorDropdown = ({ onEventChange, className = '' }: EventSelectorD
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-semibold text-text-primary">{event.name}</h4>
-                        <p className="text-xs text-text-secondary">{event.nameAr}</p>
+                        <h4 className="text-sm font-semibold text-text-primary">
+                          {event.name}
+                        </h4>
+                        <p className="text-xs text-text-secondary">{event.venue}</p>
                       </div>
                       <span className={`rounded-full px-2 py-1 text-xs ${badge.color} whitespace-nowrap font-medium`}>
                         {badge.label}
@@ -154,7 +147,7 @@ const EventSelectorDropdown = ({ onEventChange, className = '' }: EventSelectorD
                     <div className="flex items-center gap-4 text-xs text-text-secondary">
                       <span className="flex items-center gap-1">
                         <Icon name="CalendarIcon" size={14} />
-                        {event.date}
+                        {formatEventDate(event.date)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Icon name="MapPinIcon" size={14} />

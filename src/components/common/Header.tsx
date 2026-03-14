@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon'
 import AppImage from '@/components/ui/AppImage'
+import LocaleSwitch from '@/components/common/LocaleSwitch'
 import { getCurrentUser } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { useLocale } from 'next-intl'
@@ -15,11 +16,12 @@ interface HeaderProps {
 
 const Header = ({ className = '' }: HeaderProps) => {
   const locale = useLocale()
+  const isArabic = locale === 'ar'
   const pathname = usePathname()
   const router = useRouter()
   const [isEventSelectorOpen, setIsEventSelectorOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState('Wedding - Sarah & Ahmed')
+  const [selectedEvent, setSelectedEvent] = useState(isArabic ? 'حفل زفاف - سارة وأحمد' : 'Wedding - Sarah & Ahmed')
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -29,21 +31,21 @@ const Header = ({ className = '' }: HeaderProps) => {
       labelAr: 'الفعاليات',
       path: '/event-management-dashboard',
       icon: 'CalendarIcon',
-      tooltip: 'Manage your events and templates',
+      tooltip: isArabic ? 'إدارة فعالياتك والقوالب الخاصة بك' : 'Manage your events and templates',
     },
     {
       label: 'Guests',
       labelAr: 'الضيوف',
       path: '/guest-list-management',
       icon: 'UsersIcon',
-      tooltip: 'Manage guest lists and communications',
+      tooltip: isArabic ? 'إدارة قوائم الضيوف والتواصل' : 'Manage guest lists and communications',
     },
     {
       label: 'Check-in',
       labelAr: 'تسجيل الحضور',
       path: '/qr-check-in-system',
       icon: 'QrCodeIcon',
-      tooltip: 'Real-time attendance tracking',
+      tooltip: isArabic ? 'متابعة الحضور بشكل فوري' : 'Real-time attendance tracking',
     },
   ]
 
@@ -90,10 +92,41 @@ const Header = ({ className = '' }: HeaderProps) => {
   }
 
   const events = [
-    { id: 1, name: 'Wedding - Sarah & Ahmed', date: '2026-03-15', status: 'active' },
-    { id: 2, name: 'Corporate Gala 2026', date: '2026-04-20', status: 'planning' },
-    { id: 3, name: 'Birthday - Mohammed', date: '2026-05-10', status: 'planning' },
+    {
+      id: 1,
+      name: isArabic ? 'حفل زفاف - سارة وأحمد' : 'Wedding - Sarah & Ahmed',
+      date: '2026-03-15',
+      status: 'active',
+    },
+    {
+      id: 2,
+      name: isArabic ? 'الحفل المؤسسي 2026' : 'Corporate Gala 2026',
+      date: '2026-04-20',
+      status: 'planning',
+    },
+    {
+      id: 3,
+      name: isArabic ? 'عيد ميلاد - محمد' : 'Birthday - Mohammed',
+      date: '2026-05-10',
+      status: 'planning',
+    },
   ]
+
+  const getEventStatusLabel = (status: string) => {
+    if (!isArabic) return status
+
+    const statusMap: Record<string, string> = {
+      active: 'نشط',
+      planning: 'قيد التخطيط',
+      completed: 'مكتمل',
+    }
+
+    return statusMap[status] || status
+  }
+
+  useEffect(() => {
+    setSelectedEvent(isArabic ? 'حفل زفاف - سارة وأحمد' : 'Wedding - Sarah & Ahmed')
+  }, [isArabic])
 
   const handleEventSelect = (eventName: string) => {
     setSelectedEvent(eventName)
@@ -120,7 +153,7 @@ const Header = ({ className = '' }: HeaderProps) => {
             <button
               onClick={() => setIsEventSelectorOpen(!isEventSelectorOpen)}
               className="transition-smooth hover:bg-muted/80 flex items-center gap-1 rounded-md bg-muted px-2 py-2 focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 sm:gap-2 sm:px-3 md:px-4"
-              aria-label="Select event"
+              aria-label={isArabic ? 'اختر الفعالية' : 'Select event'}
               aria-expanded={isEventSelectorOpen}
             >
               <Icon name="CalendarIcon" size={18} className="text-primary sm:h-5 sm:w-5" />
@@ -156,7 +189,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                             event.status === 'active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
                           }`}
                         >
-                          {event.status}
+                          {getEventStatusLabel(event.status)}
                         </span>
                       </button>
                     ))}
@@ -168,7 +201,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                       onClick={() => setIsEventSelectorOpen(false)}
                     >
                       <Icon name="PlusIcon" size={16} />
-                      <span>Create New Event</span>
+                      <span>{isArabic ? 'إنشاء فعالية جديدة' : 'Create New Event'}</span>
                     </Link>
                   </div>
                 </div>
@@ -192,7 +225,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                 title={tab.tooltip}
               >
                 <Icon name={tab.icon as any} size={18} className="sm:h-5 sm:w-5" />
-                <span className="hidden text-sm font-medium md:inline">{tab.label}</span>
+                <span className="hidden text-sm font-medium md:inline">{isArabic ? tab.labelAr : tab.label}</span>
               </Link>
             )
           })}
@@ -200,11 +233,12 @@ const Header = ({ className = '' }: HeaderProps) => {
 
         {/* Profile Dropdown */}
         {!loading && user && (
-          <div className="relative">
+          <div className="relative flex items-center gap-2 sm:gap-3">
+            <LocaleSwitch />
             <button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className="transition-smooth flex items-center gap-2 rounded-md px-1 py-2 hover:bg-muted focus:outline-none sm:gap-3 sm:px-2 md:px-3"
-              aria-label="User profile menu"
+              aria-label={isArabic ? 'قائمة ملف المستخدم' : 'User profile menu'}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground sm:h-9 sm:w-9 sm:text-sm md:h-10 md:w-10">
                 {getUserInitials()}
@@ -217,16 +251,18 @@ const Header = ({ className = '' }: HeaderProps) => {
                 <div className="absolute right-0 top-full z-200 mt-2 w-56 overflow-hidden rounded-md bg-popover shadow-warm-lg sm:w-64">
                   <div className="border-b border-border p-3 sm:p-4">
                     <p className="text-xs font-semibold text-text-primary sm:text-sm">
-                      {user?.profile?.full_name || 'User'}
+                      {user?.profile?.full_name || (isArabic ? 'المستخدم' : 'User')}
                     </p>
                     <p className="mt-1 text-xs text-text-secondary">{user?.email}</p>
                     {user?.profile && (
                       <>
                         <p className="mt-2 text-xs text-text-secondary">
-                          Plan: <span className="font-medium capitalize">{user.profile.plan_type || 'Free'}</span>
+                          {isArabic ? 'الخطة:' : 'Plan:'}{' '}
+                          <span className="font-medium capitalize">{user.profile.plan_type || (isArabic ? 'مجانية' : 'Free')}</span>
                         </p>
                         <p className="text-xs text-text-secondary">
-                          Status: <span className="font-medium capitalize">{user.profile.subscription_status}</span>
+                          {isArabic ? 'الحالة:' : 'Status:'}{' '}
+                          <span className="font-medium capitalize">{user.profile.subscription_status}</span>
                         </p>
                       </>
                     )}
@@ -238,7 +274,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Icon name="SettingsIcon" size={16} />
-                      <span>Settings</span>
+                      <span>{isArabic ? 'الإعدادات' : 'Settings'}</span>
                     </Link>
                     <button
                       onClick={() => {
@@ -248,7 +284,7 @@ const Header = ({ className = '' }: HeaderProps) => {
                       className="transition-smooth flex w-full items-center gap-3 rounded-md px-3 py-2 text-xs text-red-600 hover:bg-red-50 sm:px-4 sm:text-sm"
                     >
                       <Icon name="LogOutIcon" size={16} />
-                      <span>Sign Out</span>
+                      <span>{isArabic ? 'تسجيل الخروج' : 'Sign Out'}</span>
                     </button>
                   </div>
                 </div>

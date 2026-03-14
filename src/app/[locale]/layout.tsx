@@ -16,10 +16,13 @@ export async function generateStaticParams() {
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params
   const messages = await getMessages()
+  const direction = locale === 'ar' ? 'rtl' : 'ltr'
 
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>
-      {children}
+      <div lang={locale} dir={direction} className="min-h-screen">
+        {children}
+      </div>
     </NextIntlClientProvider>
   )
 }

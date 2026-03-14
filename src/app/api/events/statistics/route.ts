@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       // Return aggregated stats for all user's events
       const { data: guests, error } = await supabase
         .from('guests')
-        .select('response_status, checked_in, events(user_id)')
+        .select('status, checked_in, events(user_id)')
         .eq('events.user_id', userId)
 
       if (error) {
@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
 
       const stats = {
         invitationsSent: guests?.length || 0,
-        confirmedGuests: guests?.filter((g) => g.response_status === 'confirmed').length || 0,
-        pendingResponses: guests?.filter((g) => g.response_status === 'no-response').length || 0,
+        confirmedGuests: guests?.filter((g) => g.status === 'confirmed').length || 0,
+        pendingResponses: guests?.filter((g) => g.status === 'no_response').length || 0,
         checkedIn: guests?.filter((g) => g.checked_in).length || 0,
       }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Return stats for specific event
     const { data: guests, error } = await supabase
       .from('guests')
-      .select('response_status, checked_in')
+      .select('status, checked_in')
       .eq('event_id', eventId)
 
     if (error) {
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       invitationsSent: guests?.length || 0,
-      confirmedGuests: guests?.filter((g) => g.response_status === 'confirmed').length || 0,
-      pendingResponses: guests?.filter((g) => g.response_status === 'no-response').length || 0,
+      confirmedGuests: guests?.filter((g) => g.status === 'confirmed').length || 0,
+      pendingResponses: guests?.filter((g) => g.status === 'no_response').length || 0,
       checkedIn: guests?.filter((g) => g.checked_in).length || 0,
     }
 

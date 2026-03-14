@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon'
 import AppImage from '@/components/ui/AppImage'
+import { useLocale } from 'next-intl'
 
 interface Guest {
   id: string | number
@@ -27,6 +28,8 @@ interface GuestTableRowProps {
 }
 
 const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: GuestTableRowProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const getDeliveryStatusColor = (status: Guest['deliveryStatus']) => {
     const statusMap = {
       delivered: 'bg-success/10 text-success',
@@ -34,7 +37,7 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
       pending: 'bg-warning/10 text-warning',
       read: 'bg-primary/10 text-primary',
     }
-    return statusMap[status]
+    return statusMap[status] || statusMap.pending
   }
 
   const getResponseStatusColor = (status: Guest['responseStatus']) => {
@@ -53,7 +56,26 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
       pending: 'ClockIcon',
       read: 'CheckBadgeIcon',
     }
-    return iconMap[status]
+    return iconMap[status] || iconMap.pending
+  }
+
+  const getDeliveryStatusLabel = (status: Guest['deliveryStatus']) => {
+    const labelMap = {
+      delivered: isArabic ? 'تم التسليم' : 'delivered',
+      failed: isArabic ? 'فشل' : 'failed',
+      pending: isArabic ? 'معلق' : 'pending',
+      read: isArabic ? 'تمت القراءة' : 'read',
+    }
+    return labelMap[status] || labelMap.pending
+  }
+
+  const getResponseStatusLabel = (status: Guest['responseStatus']) => {
+    const labelMap = {
+      confirmed: isArabic ? 'مؤكد' : 'confirmed',
+      declined: isArabic ? 'معتذر' : 'declined',
+      'no-response': isArabic ? 'لا يوجد رد' : 'no response',
+    }
+    return labelMap[status]
   }
 
   return (
@@ -64,7 +86,7 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
           checked={isSelected}
           onChange={() => onSelect(guest.id)}
           className="h-4 w-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
-          aria-label={`Select ${guest.name}`}
+          aria-label={isArabic ? `تحديد ${guest.name}` : `Select ${guest.name}`}
         />
       </td>
       <td className="px-6 py-4">
@@ -95,13 +117,13 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
           <span
             className={`rounded-full px-2 py-1 text-xs font-medium ${getDeliveryStatusColor(guest.deliveryStatus)}`}
           >
-            {guest.deliveryStatus}
+            {getDeliveryStatusLabel(guest.deliveryStatus)}
           </span>
         </div>
       </td>
       <td className="px-6 py-4">
         <span className={`rounded-full px-2 py-1 text-xs font-medium ${getResponseStatusColor(guest.responseStatus)}`}>
-          {guest.responseStatus.replace('-', ' ')}
+          {getResponseStatusLabel(guest.responseStatus)}
         </span>
       </td>
       <td className="px-6 py-4">
@@ -111,7 +133,7 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
             <span className="font-mono text-sm text-text-primary">{guest.checkInTime}</span>
           </div>
         ) : (
-          <span className="text-sm text-text-secondary">Not checked in</span>
+          <span className="text-sm text-text-secondary">{isArabic ? 'لم يتم تسجيل الحضور' : 'Not checked in'}</span>
         )}
       </td>
       <td className="px-6 py-4">
@@ -122,18 +144,18 @@ const GuestTableRow = ({ guest, isSelected, onSelect, onUpdate, onDelete }: Gues
           <button
             onClick={() => onUpdate(guest)}
             className="text-red flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-blue-700"
-            aria-label="Update guest"
+            aria-label={isArabic ? 'تحديث الضيف' : 'Update guest'}
           >
             <Icon name="PencilSquareIcon" size={16} />
-            Update
+            {isArabic ? 'تحديث' : 'Update'}
           </button>
           <button
             onClick={() => onDelete(guest.id)}
             className="text-red flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-red-700"
-            aria-label="Delete guest"
+            aria-label={isArabic ? 'حذف الضيف' : 'Delete guest'}
           >
             <Icon name="TrashIcon" size={16} />
-            Delete
+            {isArabic ? 'حذف' : 'Delete'}
           </button>
         </div>
       </td>

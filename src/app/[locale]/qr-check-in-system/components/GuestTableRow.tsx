@@ -45,7 +45,7 @@ const GuestTableRow = ({
       pending: 'bg-warning/10 text-warning',
       read: 'bg-primary/10 text-primary',
     }
-    return statusMap[status]
+    return statusMap[status] || statusMap.pending
   }
 
   const getResponseStatusColor = (status: Guest['responseStatus']) => {
@@ -64,7 +64,7 @@ const GuestTableRow = ({
       pending: 'ClockIcon',
       read: 'CheckBadgeIcon',
     }
-    return iconMap[status]
+    return iconMap[status] || iconMap.pending
   }
 
   return (

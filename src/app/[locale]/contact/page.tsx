@@ -1,11 +1,28 @@
 'use client'
 
+import { useLocale } from 'next-intl'
 import { useState } from 'react'
 
 export default function ContactPage() {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  const content = {
+    title: isArabic ? 'تواصل معنا' : 'Get in Touch',
+    subtitle: isArabic ? 'هل لديك أسئلة؟ يسعدنا التواصل معك.' : 'Have questions? We would love to hear from you.',
+    success: isArabic ? 'شكرًا لرسالتك! سنعود إليك قريبًا.' : 'Thank you for your message! We will get back to you soon.',
+    name: isArabic ? 'الاسم' : 'Name',
+    email: isArabic ? 'البريد الإلكتروني' : 'Email',
+    message: isArabic ? 'الرسالة' : 'Message',
+    sending: isArabic ? 'جارٍ الإرسال...' : 'Sending...',
+    send: isArabic ? 'إرسال الرسالة' : 'Send Message',
+    phone: isArabic ? 'الجوال' : 'Phone',
+    hours: isArabic ? 'ساعات العمل' : 'Hours',
+    hoursValue: isArabic ? 'الاثنين - الجمعة، 9 ص - 6 م' : 'Mon - Fri, 9 AM - 6 PM',
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,20 +51,16 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50 py-20">
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-900">Get in Touch</h1>
-          <p className="mt-4 text-lg text-gray-600">Have questions? We would love to hear from you.</p>
+          <h1 className="text-4xl font-bold text-gray-900">{content.title}</h1>
+          <p className="mt-4 text-lg text-gray-600">{content.subtitle}</p>
         </div>
 
         <div className="rounded-lg bg-white p-12 shadow-lg">
-          {success && (
-            <div className="mb-6 rounded-lg bg-green-100 p-4 text-green-700">
-              Thank you for your message! We will get back to you soon.
-            </div>
-          )}
+          {success && <div className="mb-6 rounded-lg bg-green-100 p-4 text-green-700">{content.success}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <label className="block text-sm font-medium text-gray-700">{content.name}</label>
               <input
                 type="text"
                 required
@@ -58,7 +71,7 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <label className="block text-sm font-medium text-gray-700">{content.email}</label>
               <input
                 type="email"
                 required
@@ -69,7 +82,7 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
+              <label className="block text-sm font-medium text-gray-700">{content.message}</label>
               <textarea
                 required
                 rows={6}
@@ -84,17 +97,16 @@ export default function ContactPage() {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Sending...' : 'Send Message'}
+              {loading ? content.sending : content.send}
             </button>
           </form>
         </div>
 
-        {/* Contact Info */}
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {[
-            { label: 'Email', value: 'support@marasim.digital' },
-            { label: 'Phone', value: '+966 55 1981 751' },
-            { label: 'Hours', value: 'Mon - Fri, 9 AM - 6 PM' },
+            { label: content.email, value: 'support@marasim.digital' },
+            { label: content.phone, value: '+966 55 1981 751' },
+            { label: content.hours, value: content.hoursValue },
           ].map((item, idx) => (
             <div key={idx} className="text-center">
               <p className="text-sm font-medium text-gray-600">{item.label}</p>

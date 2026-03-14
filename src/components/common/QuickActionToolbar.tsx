@@ -1,6 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
@@ -19,6 +20,8 @@ interface QuickActionToolbarProps {
 
 const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
   const pathname = usePathname()
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isOverflowOpen, setIsOverflowOpen] = useState(false)
 
   const handleExportExcel = () => {
@@ -127,10 +130,10 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
             key={index}
             onClick={action.onClick}
             className={getButtonClasses(action.variant)}
-            aria-label={action.label}
+            aria-label={isArabic ? action.labelAr : action.label}
           >
             <Icon name={action.icon as any} size={20} />
-            <span className="text-sm">{action.label}</span>
+            <span className="text-sm">{isArabic ? action.labelAr : action.label}</span>
           </button>
         ))}
 
@@ -139,11 +142,11 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
             <button
               onClick={() => setIsOverflowOpen(!isOverflowOpen)}
               className="transition-smooth hover:bg-muted/80 flex items-center gap-2 rounded-md bg-muted px-4 py-2.5 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-              aria-label="More actions"
+              aria-label={isArabic ? 'المزيد من الإجراءات' : 'More actions'}
               aria-expanded={isOverflowOpen}
             >
               <Icon name="EllipsisHorizontalIcon" size={20} />
-              <span className="text-sm font-medium">More</span>
+              <span className="text-sm font-medium">{isArabic ? 'المزيد' : 'More'}</span>
             </button>
 
             {isOverflowOpen && (
@@ -161,7 +164,7 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
                         className="transition-smooth flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-text-primary hover:bg-muted"
                       >
                         <Icon name={action.icon as any} size={20} />
-                        <span className="text-sm">{action.label}</span>
+                        <span className="text-sm">{isArabic ? action.labelAr : action.label}</span>
                       </button>
                     ))}
                   </div>
@@ -176,11 +179,11 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
         <button
           onClick={() => setIsOverflowOpen(!isOverflowOpen)}
           className="transition-smooth hover:bg-primary/90 flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-primary-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-          aria-label="Quick actions"
+          aria-label={isArabic ? 'إجراءات سريعة' : 'Quick actions'}
           aria-expanded={isOverflowOpen}
         >
           <Icon name="BoltIcon" size={20} />
-          <span className="text-sm font-medium">Actions</span>
+          <span className="text-sm font-medium">{isArabic ? 'الإجراءات' : 'Actions'}</span>
         </button>
 
         {isOverflowOpen && (
@@ -189,11 +192,11 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
             <div className="fixed bottom-0 left-0 right-0 z-200 animate-slide-up rounded-t-xl bg-popover shadow-warm-xl">
               <div className="p-4">
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-heading text-lg font-semibold text-text-primary">Quick Actions</h3>
+                  <h3 className="font-heading text-lg font-semibold text-text-primary">{isArabic ? 'إجراءات سريعة' : 'Quick Actions'}</h3>
                   <button
                     onClick={() => setIsOverflowOpen(false)}
                     className="transition-smooth p-2 text-text-secondary hover:text-text-primary"
-                    aria-label="Close"
+                    aria-label={isArabic ? 'إغلاق' : 'Close'}
                   >
                     <Icon name="XMarkIcon" size={24} />
                   </button>
@@ -209,7 +212,7 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
                       className="transition-smooth hover:bg-muted/80 active:scale-97 flex flex-col items-center gap-2 rounded-md bg-muted p-4"
                     >
                       <Icon name={action.icon as any} size={24} className="text-primary" />
-                      <span className="text-center text-xs font-medium text-text-primary">{action.label}</span>
+                      <span className="text-center text-xs font-medium text-text-primary">{isArabic ? action.labelAr : action.label}</span>
                     </button>
                   ))}
                 </div>

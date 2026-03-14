@@ -1,72 +1,38 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
-import AppImage from '@/components/ui/AppImage'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 
-interface Guest {
-  id: number
+import type { ScanSubmissionResult } from './QRScannerViewport'
+
+export interface QRCheckInGuest {
+  id: string
   name: string
-  nameAr: string
   email: string
   phone: string
-  image: string
-  alt: string
-  status: 'pending' | 'confirmed' | 'checked-in'
-  tableNumber?: string
-  invitationCode: string
+  responseStatus: 'confirmed' | 'declined' | 'no-response'
+  checkInTime: string | null
+  qrCode: string
+  plusOnes: number
 }
 
 interface ManualCheckInSearchProps {
-  onCheckIn: (guestId: number) => void
+  guests: QRCheckInGuest[]
+  isLoading?: boolean
+  onCheckIn: (guestId: string) => Promise<ScanSubmissionResult>
   className?: string
 }
 
-const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchProps) => {
+const ManualCheckInSearch = ({ guests, isLoading = false, onCheckIn, className = '' }: ManualCheckInSearchProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isHydrated, setIsHydrated] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<Guest[]>([])
+  const [searchResults, setSearchResults] = useState<QRCheckInGuest[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
-
-  const mockGuests: Guest[] = [
-    {
-      id: 1,
-      name: 'Sarah Ahmed Al-Mutairi',
-      nameAr: 'سارة أحمد المطيري',
-      email: 'sarah.almutairi@email.com',
-      phone: '+966 50 123 4567',
-      image: 'https://img.rocket.new/generatedImages/rocket_gen_img_15be21417-1763300642898.png',
-      alt: 'Professional Arab woman in burgundy hijab with warm smile and formal attire',
-      status: 'confirmed',
-      tableNumber: 'A-15',
-      invitationCode: 'INV-SAR2026',
-    },
-    {
-      id: 2,
-      name: 'Mohammed Khalid Al-Dosari',
-      nameAr: 'محمد خالد الدوسري',
-      email: 'mohammed.dosari@email.com',
-      phone: '+966 55 234 5678',
-      image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1de59f661-1763295911995.png',
-      alt: 'Confident Arab businessman in charcoal suit with professional demeanor',
-      status: 'pending',
-      tableNumber: 'B-8',
-      invitationCode: 'INV-MOH2026',
-    },
-    {
-      id: 3,
-      name: 'Noura Hassan Al-Qahtani',
-      nameAr: 'نورة حسن القحطاني',
-      email: 'noura.qahtani@email.com',
-      phone: '+966 50 345 6789',
-      image: 'https://img.rocket.new/generatedImages/rocket_gen_img_16a279741-1763297983672.png',
-      alt: 'Elegant Arab woman in navy hijab with professional appearance',
-      status: 'confirmed',
-      tableNumber: 'VIP-2',
-      invitationCode: 'INV-NOU2026',
-    },
-  ]
+  const [selectedGuest, setSelectedGuest] = useState<QRCheckInGuest | null>(null)
+  const [isSubmittingId, setIsSubmittingId] = useState<string | null>(null)
 
   useEffect(() => {
     setIsHydrated(true)
@@ -80,34 +46,47 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
 
     setIsSearching(true)
     const timer = setTimeout(() => {
-      const filtered = mockGuests.filter(
+      const filtered = guests.filter(
         (guest) =>
           guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          guest.nameAr.includes(searchQuery) ||
           guest.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
           guest.phone.includes(searchQuery) ||
-          guest.invitationCode.toLowerCase().includes(searchQuery.toLowerCase())
+          guest.qrCode.toLowerCase().includes(searchQuery.toLowerCase())
       )
       setSearchResults(filtered)
       setIsSearching(false)
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, isHydrated])
+  }, [searchQuery, isHydrated, guests])
 
-  const handleCheckIn = (guest: Guest) => {
-    if (guest.status === 'checked-in') return
-    setSelectedGuest(guest)
-    onCheckIn(guest.id)
+  const handleCheckIn = async (guest: QRCheckInGuest) => {
+    if (guest.checkInTime) return
+    setIsSubmittingId(guest.id)
+    try {
+      const result = await onCheckIn(guest.id)
+      if (result.status === 'success' || result.status === 'duplicate') {
+        setSelectedGuest(guest)
+      }
+    } finally {
+      setIsSubmittingId(null)
+    }
   }
 
-  const getStatusBadge = (status: Guest['status']) => {
-    const badges = {
-      pending: { label: 'Pending', color: 'bg-warning/10 text-warning' },
-      confirmed: { label: 'Confirmed', color: 'bg-success/10 text-success' },
-      'checked-in': { label: 'Checked In', color: 'bg-primary/10 text-primary' },
+  const getStatusBadge = (guest: QRCheckInGuest) => {
+    if (guest.checkInTime) {
+      return { label: isArabic ? 'تم التسجيل' : 'Checked In', color: 'bg-primary/10 text-primary' }
     }
-    return badges[status]
+
+    if (guest.responseStatus === 'confirmed') {
+      return { label: isArabic ? 'مؤكد' : 'Confirmed', color: 'bg-success/10 text-success' }
+    }
+
+    if (guest.responseStatus === 'declined') {
+      return { label: isArabic ? 'معتذر' : 'Declined', color: 'bg-destructive/10 text-destructive' }
+    }
+
+    return { label: isArabic ? 'بانتظار الرد' : 'Awaiting RSVP', color: 'bg-warning/10 text-warning' }
   }
 
   if (!isHydrated) {
@@ -129,8 +108,12 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
             <Icon name="MagnifyingGlassIcon" size={24} className="text-secondary" />
           </div>
           <div>
-            <h2 className="font-heading text-xl font-semibold text-text-primary">Manual Check-in</h2>
-            <p className="text-sm text-text-secondary">Search and check in guests manually</p>
+            <h2 className="font-heading text-xl font-semibold text-text-primary">
+              {isArabic ? 'تسجيل يدوي' : 'Manual Check-in'}
+            </h2>
+            <p className="text-sm text-text-secondary">
+              {isArabic ? 'ابحث وسجّل حضور الضيوف يدوياً' : 'Search and check in guests manually'}
+            </p>
           </div>
         </div>
       </div>
@@ -144,7 +127,7 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, email, phone, or invitation code..."
+            placeholder={isArabic ? 'البحث بالاسم أو الإيميل أو الهاتف أو رمز الدعوة...' : 'Search by name, email, phone, or invitation code...'}
             className="w-full rounded-md border border-input bg-muted py-3 pl-12 pr-4 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-3 focus:ring-ring"
           />
 
@@ -155,29 +138,42 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
           )}
         </div>
 
-        {searchQuery.trim() && searchResults.length === 0 && !isSearching && (
+        {searchQuery.trim() && searchResults.length === 0 && !isSearching && !isLoading && (
           <div className="mt-4 p-8 text-center">
             <Icon name="UserIcon" size={48} className="mx-auto mb-3 text-text-secondary" />
-            <p className="text-text-secondary">No guests found matching your search</p>
+            <p className="text-text-secondary">{isArabic ? 'لا يوجد ضيوف مطابقون لبحثك' : 'No guests found matching your search'}</p>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="mt-4 p-8 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="mt-3 text-text-secondary">{isArabic ? 'جارٍ تحميل الضيوف...' : 'Loading guests...'}</p>
           </div>
         )}
 
         {searchResults.length > 0 && (
           <div className="mt-4 max-h-[400px] space-y-2 overflow-y-auto">
             {searchResults.map((guest) => {
-              const badge = getStatusBadge(guest.status)
+              const badge = getStatusBadge(guest)
               return (
                 <div key={guest.id} className="hover:bg-muted/80 transition-smooth rounded-lg bg-muted p-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full">
-                      <AppImage src={guest.image} alt={guest.alt} className="h-full w-full object-cover" />
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                      {guest.name
+                        .split(' ')
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0]?.toUpperCase() || '')
+                        .join('')}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="text-sm font-semibold text-text-primary">{guest.name}</h3>
-                          <p className="text-xs text-text-secondary">{guest.nameAr}</p>
+                          <h3 className="text-sm font-semibold text-text-primary">
+                            {guest.name}
+                          </h3>
                         </div>
                         <span className={`rounded-full px-2 py-1 text-xs ${badge.color} whitespace-nowrap font-medium`}>
                           {badge.label}
@@ -196,21 +192,29 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
                       </div>
 
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-text-secondary">Code: {guest.invitationCode}</span>
-                        {guest.tableNumber && (
-                          <span className="rounded-full bg-card px-2 py-1 text-xs text-text-primary">
-                            Table {guest.tableNumber}
-                          </span>
-                        )}
+                        <span className="text-xs text-text-secondary">{isArabic ? 'الرمز:' : 'Code:'} {guest.qrCode}</span>
+                        <span className="rounded-full bg-card px-2 py-1 text-xs text-text-primary">
+                          {isArabic ? `المرافقون ${guest.plusOnes}` : `Plus ones ${guest.plusOnes}`}
+                        </span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => handleCheckIn(guest)}
-                      disabled={guest.status === 'checked-in'}
+                      onClick={() => void handleCheckIn(guest)}
+                      disabled={Boolean(guest.checkInTime) || isSubmittingId === guest.id}
                       className="transition-smooth hover:bg-primary/90 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {guest.status === 'checked-in' ? 'Checked In' : 'Check In'}
+                      {guest.checkInTime
+                        ? isArabic
+                          ? 'تم التسجيل'
+                          : 'Checked In'
+                        : isSubmittingId === guest.id
+                          ? isArabic
+                            ? 'جارٍ التحقق...'
+                            : 'Checking in...'
+                          : isArabic
+                            ? 'تسجيل الحضور'
+                            : 'Check In'}
                     </button>
                   </div>
                 </div>
@@ -224,8 +228,8 @@ const ManualCheckInSearch = ({ onCheckIn, className = '' }: ManualCheckInSearchP
             <div className="flex items-center gap-3">
               <Icon name="CheckCircleIcon" size={24} className="text-success" />
               <div>
-                <p className="font-semibold text-success">Check-in Successful</p>
-                <p className="text-sm text-text-secondary">{selectedGuest.name} has been checked in</p>
+                <p className="font-semibold text-success">{isArabic ? 'تم تسجيل الحضور بنجاح' : 'Check-in Successful'}</p>
+                <p className="text-sm text-text-secondary">{selectedGuest.name} {isArabic ? 'تم تسجيل دخوله' : 'has been checked in'}</p>
               </div>
             </div>
           </div>

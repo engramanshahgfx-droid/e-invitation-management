@@ -1,6 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 import { useRef, useState } from 'react'
 
 interface FileUploadZoneProps {
@@ -10,6 +11,8 @@ interface FileUploadZoneProps {
 }
 
 const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: FileUploadZoneProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isDragging, setIsDragging] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
   const [uploadMessage, setUploadMessage] = useState('')
@@ -46,18 +49,24 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
     // Only accept CSV files
     if (!file.type.includes('text') && file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
       setUploadStatus('error')
-      setUploadMessage('Please upload a CSV file. If you have an Excel file, export it as CSV first.')
+      setUploadMessage(
+        isArabic
+          ? 'يرجى رفع ملف CSV. إذا كان لديك ملف Excel فقم بتصديره كملف CSV أولاً.'
+          : 'Please upload a CSV file. If you have an Excel file, export it as CSV first.'
+      )
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
       setUploadStatus('error')
-      setUploadMessage('File size exceeds 10MB limit. Please upload a smaller file.')
+      setUploadMessage(
+        isArabic ? 'حجم الملف يتجاوز 10MB. يرجى رفع ملف أصغر.' : 'File size exceeds 10MB limit. Please upload a smaller file.'
+      )
       return
     }
 
     setUploadStatus('uploading')
-    setUploadMessage('Processing file...')
+    setUploadMessage(isArabic ? 'جارٍ معالجة الملف...' : 'Processing file...')
     onFileUpload(file)
   }
 
@@ -91,7 +100,7 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
           accept=".csv"
           onChange={handleFileSelect}
           className="hidden"
-          aria-label="Upload guest list CSV file"
+          aria-label={isArabic ? 'رفع ملف CSV لقائمة الضيوف' : 'Upload guest list CSV file'}
           disabled={disabled || isLoading}
         />
 
@@ -99,7 +108,7 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
           {isLoading || uploadStatus === 'uploading' ? (
             <div className="flex flex-col items-center gap-3">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="text-sm font-medium text-text-primary">{isLoading ? 'Uploading...' : uploadMessage}</p>
+              <p className="text-sm font-medium text-text-primary">{isLoading ? (isArabic ? 'جارٍ الرفع...' : 'Uploading...') : uploadMessage}</p>
             </div>
           ) : uploadStatus === 'success' ? (
             <div className="flex flex-col items-center gap-3">
@@ -122,19 +131,25 @@ const FileUploadZone = ({ onFileUpload, isLoading = false, disabled = false }: F
               </div>
               <div className="text-center">
                 <p className="mb-1 text-base font-medium text-text-primary">
-                  {disabled ? 'Select an event to upload guests' : 'Drag and drop your CSV file here'}
+                  {disabled
+                    ? isArabic
+                      ? 'اختر فعالية لرفع الضيوف'
+                      : 'Select an event to upload guests'
+                    : isArabic
+                      ? 'اسحب وأفلت ملف CSV هنا'
+                      : 'Drag and drop your CSV file here'}
                 </p>
-                <p className="text-sm text-text-secondary">or</p>
+                <p className="text-sm text-text-secondary">{isArabic ? 'أو' : 'or'}</p>
               </div>
               <button
                 onClick={handleBrowseClick}
                 disabled={disabled || isLoading}
                 className="transition-smooth hover:bg-primary/90 active:scale-97 rounded-md bg-primary px-6 py-2.5 font-medium text-primary-foreground focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {disabled ? 'Select Event First' : 'Browse Files'}
+                {disabled ? (isArabic ? 'اختر الفعالية أولاً' : 'Select Event First') : isArabic ? 'استعراض الملفات' : 'Browse Files'}
               </button>
               <p className="text-center text-xs text-text-secondary">
-                Supported format: CSV only • Maximum file size: 10MB
+                {isArabic ? 'الصيغة المدعومة: CSV فقط • الحد الأقصى لحجم الملف: 10MB' : 'Supported format: CSV only • Maximum file size: 10MB'}
               </p>
             </>
           )}

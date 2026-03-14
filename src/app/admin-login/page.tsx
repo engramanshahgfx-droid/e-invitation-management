@@ -10,6 +10,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isArabic, setIsArabic] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,19 +48,40 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 px-4">
+    <div
+      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 px-4"
+      dir={isArabic ? 'rtl' : 'ltr'}
+      style={isArabic ? { fontFamily: "'Tajawal', sans-serif" } : {}}
+    >
       <div className="w-full max-w-md">
+        {/* Language toggle */}
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => setIsArabic(!isArabic)}
+            className="rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-600"
+            aria-label="Toggle language"
+          >
+            {isArabic ? 'English' : 'عربي'}
+          </button>
+        </div>
+
         <div className="rounded-lg bg-white p-8 shadow-xl">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-            <p className="mt-2 text-gray-600">Super Admin Login</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isArabic ? 'لوحة الإدارة' : 'Admin Panel'}
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {isArabic ? 'تسجيل دخول المشرف العام' : 'Super Admin Login'}
+            </p>
           </div>
 
           {error && <div className="mb-4 rounded-lg bg-red-100 p-4 text-sm text-red-700">{error}</div>}
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Email Address</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                {isArabic ? 'البريد الإلكتروني' : 'Email Address'}
+              </label>
               <input
                 type="email"
                 value={email}
@@ -70,7 +92,9 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Password</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                {isArabic ? 'كلمة المرور' : 'Password'}
+              </label>
               <input
                 type="password"
                 value={password}
@@ -85,14 +109,19 @@ export default function AdminLoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading
+                ? (isArabic ? 'جارٍ تسجيل الدخول...' : 'Logging in...')
+                : (isArabic ? 'تسجيل الدخول' : 'Login')}
             </button>
           </form>
 
           <div className="mt-6 rounded-lg bg-blue-50 p-4 text-sm text-blue-700">
             <p>
-              ⚠️ <strong>Secure Area:</strong> Only super admin users can access this panel. All activities are logged
-              for security.
+              ⚠️{' '}
+              <strong>{isArabic ? 'منطقة آمنة:' : 'Secure Area:'}</strong>{' '}
+              {isArabic
+                ? 'يمكن فقط للمشرفين العامين الوصول إلى هذه اللوحة. يتم تسجيل جميع الأنشطة لأغراض الأمان.'
+                : 'Only super admin users can access this panel. All activities are logged for security.'}
             </p>
           </div>
         </div>

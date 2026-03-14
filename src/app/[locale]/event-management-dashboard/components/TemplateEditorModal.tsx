@@ -3,6 +3,7 @@
 import Icon from '@/components/ui/AppIcon'
 import AppImage from '@/components/ui/AppImage'
 import { defaultTemplate, templateService, type TemplateData } from '@/lib/templateService'
+import { useLocale } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
 interface TemplateEditorModalProps {
@@ -26,6 +27,9 @@ interface Notification {
 }
 
 const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: TemplateEditorModalProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
+
   const [isHydrated, setIsHydrated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -34,6 +38,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
 
   const [template, setTemplate] = useState<TemplateData>(() => ({
     ...defaultTemplate,
+    language: isArabic ? 'ar' : 'en',
     eventDetails: {
       date: eventData?.date || defaultTemplate.eventDetails.date,
       time: eventData?.time || defaultTemplate.eventDetails.time,
@@ -50,7 +55,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
       const existingTemplate = await templateService.getTemplate(eventId)
       if (existingTemplate) {
         setTemplate({
-          language: existingTemplate.language,
+          language: isArabic ? 'ar' : 'en',
           headerImage: existingTemplate.headerImage,
           title: existingTemplate.title,
           titleAr: existingTemplate.titleAr,
@@ -138,13 +143,13 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
     try {
       // Validate required fields
       if (!template.title.trim()) {
-        showNotification('error', 'Invitation title is required')
+        showNotification('error', isArabic ? 'عنوان الدعوة مطلوب' : 'Invitation title is required')
         setIsSaving(false)
         return
       }
 
       if (!template.message.trim()) {
-        showNotification('error', 'Invitation message is required')
+        showNotification('error', isArabic ? 'رسالة الدعوة مطلوبة' : 'Invitation message is required')
         setIsSaving(false)
         return
       }
@@ -154,7 +159,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
         const result = await templateService.saveTemplate(eventId, template)
 
         if (!result.success) {
-          showNotification('error', result.error || 'Failed to save template')
+          showNotification('error', result.error || (isArabic ? 'فشل حفظ القالب' : 'Failed to save template'))
           setIsSaving(false)
           return
         }
@@ -163,7 +168,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
       // Call parent onSave
       onSave(template)
 
-      showNotification('success', 'Template saved successfully!')
+      showNotification('success', isArabic ? 'تم حفظ القالب بنجاح!' : 'Template saved successfully!')
       setHasUnsavedChanges(false)
 
       // Close modal after a short delay to show success message
@@ -172,7 +177,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
       }, 1000)
     } catch (error) {
       console.error('Error saving template:', error)
-      showNotification('error', 'An unexpected error occurred')
+      showNotification('error', isArabic ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     } finally {
       setIsSaving(false)
     }
@@ -180,17 +185,20 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
 
   const handleClose = () => {
     if (hasUnsavedChanges) {
-      const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?')
+      const confirmClose = window.confirm(
+        isArabic ? 'لديك تغييرات غير محفوظة. هل تريد الإغلاق؟' : 'You have unsaved changes. Are you sure you want to close?'
+      )
       if (!confirmClose) return
     }
     onClose()
   }
 
   const handleResetToDefault = () => {
-    const confirmReset = window.confirm('Are you sure you want to reset to default template?')
+    const confirmReset = window.confirm(isArabic ? 'هل أنت متأكد من إعادة تعيين القالب الافتراضي؟' : 'Are you sure you want to reset to default template?')
     if (confirmReset) {
       setTemplate({
         ...defaultTemplate,
+        language: isArabic ? 'ar' : 'en',
         eventDetails: {
           date: eventData?.date || defaultTemplate.eventDetails.date,
           time: eventData?.time || defaultTemplate.eventDetails.time,
@@ -198,13 +206,13 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
         },
       })
       setHasUnsavedChanges(true)
-      showNotification('info', 'Template reset to default')
+      showNotification('info', isArabic ? 'تمت إعادة تعيين القالب الافتراضي' : 'Template reset to default')
     }
   }
 
-  // Preview content based on selected language
+  // Preview content based on app locale
   const previewContent =
-    template.language === 'ar'
+    isArabic
       ? {
           title: template.titleAr || 'أنت مدعو!',
           message: template.messageAr || 'يسعدنا دعوتك للاحتفال بهذه المناسبة الخاصة معنا. حضورك سيعني لنا الكثير.',
@@ -224,9 +232,9 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set'
+    if (!dateString) return isArabic ? 'غير محدد' : 'Not set'
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(isArabic ? 'ar-SA' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -239,12 +247,12 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
 
   // Format time for display
   const formatTime = (timeString: string) => {
-    if (!timeString) return 'Not set'
+    if (!timeString) return isArabic ? 'غير محدد' : 'Not set'
     try {
       const [hours, minutes] = timeString.split(':')
       const date = new Date()
       date.setHours(parseInt(hours), parseInt(minutes))
-      return date.toLocaleTimeString('en-US', {
+      return date.toLocaleTimeString(isArabic ? 'ar-SA' : 'en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
@@ -269,13 +277,13 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                 <Icon name="PaintBrushIcon" size={20} className="text-primary" />
               </div>
               <div>
-                <h2 className="font-heading text-xl font-semibold text-text-primary">Invitation Template Editor</h2>
+                <h2 className="font-heading text-xl font-semibold text-text-primary">{isArabic ? 'محرر قالب الدعوة' : 'Invitation Template Editor'}</h2>
                 {eventData?.name && <p className="text-sm text-text-secondary">{eventData.name}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               {hasUnsavedChanges && (
-                <span className="bg-warning/10 rounded px-2 py-1 text-xs text-warning">Unsaved changes</span>
+                <span className="bg-warning/10 rounded px-2 py-1 text-xs text-warning">{isArabic ? 'تغييرات غير محفوظة' : 'Unsaved changes'}</span>
               )}
               <button
                 onClick={handleClose}
@@ -317,45 +325,18 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
             <div className="flex h-96 items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-                <p className="text-text-secondary">Loading template...</p>
+                <p className="text-text-secondary">{isArabic ? 'جاري تحميل القالب...' : 'Loading template...'}</p>
               </div>
             </div>
           ) : (
             <div className="grid h-[calc(90vh-120px)] grid-cols-1 lg:grid-cols-2">
               {/* Editor Panel */}
-              <div className="overflow-y-auto border-r border-border p-6">
+              <div className="overflow-y-auto border-r border-border p-6" dir={isArabic ? 'rtl' : 'ltr'}>
                 <div className="space-y-6">
-                  {/* Language Selector */}
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-text-primary">Language / اللغة</label>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleChange('language', 'en')}
-                        className={`transition-smooth flex-1 rounded-md px-4 py-2 font-medium ${
-                          template.language === 'en'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-muted/80 bg-muted text-text-primary'
-                        }`}
-                      >
-                        English
-                      </button>
-                      <button
-                        onClick={() => handleChange('language', 'ar')}
-                        className={`transition-smooth flex-1 rounded-md px-4 py-2 font-medium ${
-                          template.language === 'ar'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-muted/80 bg-muted text-text-primary'
-                        }`}
-                      >
-                        العربية
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Header Image URL */}
                   <div>
                     <label htmlFor="headerImage" className="mb-2 block text-sm font-medium text-text-primary">
-                      Header Image URL
+                      {isArabic ? 'رابط صورة الرأس' : 'Header Image URL'}
                     </label>
                     <input
                       type="url"
@@ -365,13 +346,13 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                       className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                       placeholder="https://example.com/image.jpg"
                     />
-                    <p className="mt-1 text-xs text-text-secondary">Recommended: 1200x600 pixels, JPG or PNG format</p>
+                    <p className="mt-1 text-xs text-text-secondary">{isArabic ? 'يُنصح باستخدام: 1200×600 بكسل، صيغة JPG أو PNG' : 'Recommended: 1200x600 pixels, JPG or PNG format'}</p>
                   </div>
 
                   {/* Invitation Title (English) */}
                   <div>
                     <label htmlFor="title" className="mb-2 block text-sm font-medium text-text-primary">
-                      Invitation Title (English)
+                      {isArabic ? 'عنوان الدعوة (بالإنجليزية)' : 'Invitation Title (English)'}
                     </label>
                     <input
                       type="text"
@@ -386,7 +367,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   {/* Invitation Title (Arabic) */}
                   <div>
                     <label htmlFor="titleAr" className="mb-2 block text-sm font-medium text-text-primary">
-                      Invitation Title (Arabic) / عنوان الدعوة
+                      {isArabic ? 'عنوان الدعوة (بالعربية)' : 'Invitation Title (Arabic)'}
                     </label>
                     <input
                       type="text"
@@ -402,7 +383,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   {/* Invitation Message (English) */}
                   <div>
                     <label htmlFor="message" className="mb-2 block text-sm font-medium text-text-primary">
-                      Invitation Message (English)
+                      {isArabic ? 'رسالة الدعوة (بالإنجليزية)' : 'Invitation Message (English)'}
                     </label>
                     <textarea
                       id="message"
@@ -417,7 +398,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   {/* Invitation Message (Arabic) */}
                   <div>
                     <label htmlFor="messageAr" className="mb-2 block text-sm font-medium text-text-primary">
-                      Invitation Message (Arabic) / رسالة الدعوة
+                      {isArabic ? 'رسالة الدعوة (بالعربية)' : 'Invitation Message (Arabic)'}
                     </label>
                     <textarea
                       id="messageAr"
@@ -432,11 +413,11 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
 
                   {/* Event Details */}
                   <div className="border-t border-border pt-6">
-                    <h3 className="mb-4 text-sm font-semibold text-text-primary">Event Details</h3>
+                    <h3 className="mb-4 text-sm font-semibold text-text-primary">{isArabic ? 'تفاصيل الفعالية' : 'Event Details'}</h3>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <div>
                         <label htmlFor="eventDate" className="mb-2 block text-sm font-medium text-text-primary">
-                          Event Date
+                          {isArabic ? 'تاريخ الفعالية' : 'Event Date'}
                         </label>
                         <input
                           type="date"
@@ -448,7 +429,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                       </div>
                       <div>
                         <label htmlFor="eventTime" className="mb-2 block text-sm font-medium text-text-primary">
-                          Event Time
+                          {isArabic ? 'وقت الفعالية' : 'Event Time'}
                         </label>
                         <input
                           type="time"
@@ -460,7 +441,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                       </div>
                       <div>
                         <label htmlFor="eventVenue" className="mb-2 block text-sm font-medium text-text-primary">
-                          Venue
+                          {isArabic ? 'المكان' : 'Venue'}
                         </label>
                         <input
                           type="text"
@@ -468,7 +449,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                           value={template.eventDetails.venue}
                           onChange={(e) => handleChange('eventDetails.venue', e.target.value)}
                           className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                          placeholder="Venue name"
+                          placeholder={isArabic ? 'اسم المكان' : 'Venue name'}
                         />
                       </div>
                     </div>
@@ -477,7 +458,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   {/* Footer Text (English) */}
                   <div>
                     <label htmlFor="footerText" className="mb-2 block text-sm font-medium text-text-primary">
-                      Footer Text (English)
+                      {isArabic ? 'نص التذييل (بالإنجليزية)' : 'Footer Text (English)'}
                     </label>
                     <textarea
                       id="footerText"
@@ -492,7 +473,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   {/* Footer Text (Arabic) */}
                   <div>
                     <label htmlFor="footerTextAr" className="mb-2 block text-sm font-medium text-text-primary">
-                      Footer Text (Arabic) / نص التذييل
+                      {isArabic ? 'نص التذييل (بالعربية)' : 'Footer Text (Arabic)'}
                     </label>
                     <textarea
                       id="footerTextAr"
@@ -519,7 +500,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                       onClick={handleClose}
                       className="transition-smooth hover:bg-muted/80 rounded-md bg-muted px-6 py-3 font-medium text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                     >
-                      Cancel
+                      {isArabic ? 'إلغاء' : 'Cancel'}
                     </button>
                     <button
                       onClick={handleSave}
@@ -529,12 +510,12 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                       {isSaving ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-foreground" />
-                          <span>Saving...</span>
+                          <span>{isArabic ? 'جاري الحفظ...' : 'Saving...'}</span>
                         </>
                       ) : (
                         <>
                           <Icon name="CheckIcon" size={20} />
-                          <span>Save Template</span>
+                          <span>{isArabic ? 'حفظ القالب' : 'Save Template'}</span>
                         </>
                       )}
                     </button>
@@ -545,13 +526,13 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
               {/* Preview Panel */}
               <div className="overflow-y-auto bg-muted p-6">
                 <div className="sticky top-0 mb-4 bg-muted pb-2">
-                  <h3 className="mb-1 text-lg font-semibold text-text-primary">Live Preview</h3>
-                  <p className="text-sm text-text-secondary">WhatsApp Message Format</p>
+                  <h3 className="mb-1 text-lg font-semibold text-text-primary">{isArabic ? 'معاينة حية' : 'Live Preview'}</h3>
+                  <p className="text-sm text-text-secondary">{isArabic ? 'تنسيق رسالة واتساب' : 'WhatsApp Message Format'}</p>
                 </div>
 
                 <div
                   className="mx-auto max-w-md overflow-hidden rounded-lg bg-card shadow-warm-md"
-                  dir={template.language === 'ar' ? 'rtl' : 'ltr'}
+                  dir={isArabic ? 'rtl' : 'ltr'}
                 >
                   {/* Header Image */}
                   <div className="relative h-48 overflow-hidden bg-muted">
@@ -605,7 +586,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                         <div>
                           <p className="text-xs text-text-secondary">{previewContent.venueLabel}</p>
                           <p className="text-sm font-medium text-text-primary">
-                            {template.eventDetails.venue || 'Not set'}
+                            {template.eventDetails.venue || (isArabic ? 'غير محدد' : 'Not set')}
                           </p>
                         </div>
                       </div>
@@ -615,7 +596,7 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                     <div className="flex justify-center py-4">
                       <div className="flex h-32 w-32 flex-col items-center justify-center rounded-lg border-2 border-border bg-white">
                         <Icon name="QrCodeIcon" size={64} className="text-primary" />
-                        <span className="mt-1 text-xs text-text-secondary">RSVP Code</span>
+                        <span className="mt-1 text-xs text-text-secondary">{isArabic ? 'رمز RSVP' : 'RSVP Code'}</span>
                       </div>
                     </div>
 
@@ -629,11 +610,19 @@ const TemplateEditorModal = ({ isOpen, onClose, onSave, eventId, eventData }: Te
                   <div className="flex items-start gap-2">
                     <Icon name="LightBulbIcon" size={20} className="text-info mt-0.5 flex-shrink-0" />
                     <div className="text-info text-sm">
-                      <p className="mb-1 font-medium">Preview Tips:</p>
+                      <p className="mb-1 font-medium">{isArabic ? 'تلميحات المعاينة:' : 'Preview Tips:'}</p>
                       <ul className="list-inside list-disc space-y-1 text-xs">
-                        <li>This preview shows how your invitation will appear in WhatsApp</li>
-                        <li>Toggle between English and Arabic to see both versions</li>
-                        <li>QR codes will be unique for each guest</li>
+                        {isArabic ? (
+                          <>
+                            <li>توضح هذه المعاينة كيفية ظهور دعوتك في واتساب</li>
+                            <li>سيتم توليد رموز QR فريدة لكل ضيف</li>
+                          </>
+                        ) : (
+                          <>
+                            <li>This preview shows how your invitation will appear in WhatsApp</li>
+                            <li>QR codes will be unique for each guest</li>
+                          </>
+                        )}
                       </ul>
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import UpgradeModal from '@/components/common/UpgradeModal'
 import Icon from '@/components/ui/AppIcon'
 import { getCurrentSession, getCurrentUser } from '@/lib/auth'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import CreateEventModal from './CreateEventModal'
 import EventSummaryCards from './EventSummaryCards'
@@ -71,6 +72,8 @@ const getEventStatus = (eventDate: string): 'upcoming' | 'ongoing' | 'completed'
 }
 
 const EventManagementInteractive = () => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isHydrated, setIsHydrated] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -219,14 +222,14 @@ const EventManagementInteractive = () => {
     setShowUpgradeModal(true)
     setIsCreateModalOpen(false)
     setEditingEvent(null)
-    setError(message || 'Upgrade your plan to create more events.')
+    setError(message || (isArabic ? 'قم بترقية خطتك لإنشاء فعاليات إضافية.' : 'Upgrade your plan to create more events.'))
   }
 
   if (!isHydrated || (isLoading && events.length === 0)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-        <p className="text-text-secondary">Loading your events...</p>
+        <p className="text-text-secondary">{isArabic ? 'جارٍ تحميل فعالياتك...' : 'Loading your events...'}</p>
         {error && (
           <div className="mt-4 max-w-md rounded-md border border-red-400 bg-red-100 p-4 text-center text-red-700">
             {error}
@@ -581,7 +584,7 @@ const EventManagementInteractive = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search events by name or venue..."
+                  placeholder={isArabic ? 'ابحث عن الفعاليات بالاسم أو المكان...' : 'Search events by name or venue...'}
                   className="transition-smooth w-full rounded-md border border-input bg-background py-3 pl-12 pr-4 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 />
               </div>
@@ -593,7 +596,7 @@ const EventManagementInteractive = () => {
                 className="transition-smooth hover:bg-secondary/90 active:scale-97 flex items-center gap-2 rounded-md bg-secondary px-6 py-3 font-medium text-secondary-foreground shadow-warm-sm hover:shadow-warm-md focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
               >
                 <Icon name="PaintBrushIcon" size={20} />
-                <span className="hidden sm:inline">Edit Template</span>
+                <span className="hidden sm:inline">{isArabic ? 'تعديل القالب' : 'Edit Template'}</span>
               </button>
               <button
                 onClick={() => {
@@ -603,7 +606,7 @@ const EventManagementInteractive = () => {
                 className="transition-smooth hover:bg-primary/90 active:scale-97 flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground shadow-warm-md hover:shadow-warm-lg focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
               >
                 <Icon name="PlusIcon" size={20} />
-                <span>Create Event</span>
+                <span>{isArabic ? 'إنشاء فعالية' : 'Create Event'}</span>
               </button>
             </div>
           </div>
@@ -611,10 +614,12 @@ const EventManagementInteractive = () => {
           {selectedEvents.length > 0 && (
             <div className="bg-primary/10 mt-4 flex items-center gap-3 rounded-md p-3">
               <span className="text-sm font-medium text-primary">
-                {selectedEvents.length} event{selectedEvents.length > 1 ? 's' : ''} selected
+                {isArabic
+                  ? `تم تحديد ${selectedEvents.length} فعالية`
+                  : `${selectedEvents.length} event${selectedEvents.length > 1 ? 's' : ''} selected`}
               </span>
               <button onClick={() => setSelectedEvents([])} className="ml-auto text-sm text-primary hover:underline">
-                Clear selection
+                {isArabic ? 'مسح التحديد' : 'Clear selection'}
               </button>
             </div>
           )}
@@ -632,7 +637,7 @@ const EventManagementInteractive = () => {
                     }
                     onChange={handleSelectAll}
                     className="h-4 w-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                    aria-label="Select all events"
+                    aria-label={isArabic ? 'تحديد جميع الفعاليات' : 'Select all events'}
                   />
                 </th>
                 <th className="px-6 py-4 text-left">
@@ -640,7 +645,7 @@ const EventManagementInteractive = () => {
                     onClick={() => handleSort('name')}
                     className="transition-smooth flex items-center gap-2 text-sm font-semibold text-text-primary hover:text-primary"
                   >
-                    Event Name
+                    {isArabic ? 'اسم الفعالية' : 'Event Name'}
                     <Icon
                       name={sortField === 'name' && sortDirection === 'desc' ? 'ChevronDownIcon' : 'ChevronUpIcon'}
                       size={16}
@@ -653,7 +658,7 @@ const EventManagementInteractive = () => {
                     onClick={() => handleSort('date')}
                     className="transition-smooth flex items-center gap-2 text-sm font-semibold text-text-primary hover:text-primary"
                   >
-                    Date
+                    {isArabic ? 'التاريخ' : 'Date'}
                     <Icon
                       name={sortField === 'date' && sortDirection === 'desc' ? 'ChevronDownIcon' : 'ChevronUpIcon'}
                       size={16}
@@ -666,7 +671,7 @@ const EventManagementInteractive = () => {
                     onClick={() => handleSort('status')}
                     className="transition-smooth flex items-center gap-2 text-sm font-semibold text-text-primary hover:text-primary"
                   >
-                    Status
+                    {isArabic ? 'الحالة' : 'Status'}
                     <Icon
                       name={sortField === 'status' && sortDirection === 'desc' ? 'ChevronDownIcon' : 'ChevronUpIcon'}
                       size={16}
@@ -674,10 +679,10 @@ const EventManagementInteractive = () => {
                     />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">Guests</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">Invitations</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">Attendance</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-text-primary">Actions</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">{isArabic ? 'الضيوف' : 'Guests'}</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">{isArabic ? 'الدعوات' : 'Invitations'}</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-text-primary">{isArabic ? 'الحضور' : 'Attendance'}</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-text-primary">{isArabic ? 'الإجراءات' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
@@ -715,7 +720,7 @@ const EventManagementInteractive = () => {
         {filteredAndSortedEvents.length === 0 && (
           <div className="p-12 text-center">
             <Icon name="CalendarDaysIcon" size={48} className="mx-auto mb-4 text-text-secondary" />
-            <p className="text-text-secondary">No events found matching your search.</p>
+            <p className="text-text-secondary">{isArabic ? 'لا توجد فعاليات مطابقة لبحثك.' : 'No events found matching your search.'}</p>
           </div>
         )}
       </div>

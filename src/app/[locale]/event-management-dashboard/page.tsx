@@ -6,10 +6,13 @@ import QuickActionToolbar from '@/components/common/QuickActionToolbar'
 import StatusIndicatorBar from '@/components/common/StatusIndicatorBar'
 import UserAuthGuard from '@/components/UserAuthGuard'
 import { checkSubscriptionStatus, getCurrentUser } from '@/lib/auth'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import EventManagementInteractive from './components/EventManagementInteractive'
 
 export default function EventManagementDashboardPage() {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isFree, setIsFree] = useState(false)
   const [eventLimit, setEventLimit] = useState(1)
   const [guestLimit, setGuestLimit] = useState(50)
@@ -42,9 +45,13 @@ export default function EventManagementDashboardPage() {
           <div className="mb-6">
             <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="mb-2 font-heading text-3xl font-bold text-text-primary">Event Management Dashboard</h1>
+                <h1 className="mb-2 font-heading text-3xl font-bold text-text-primary">
+                  {isArabic ? 'لوحة إدارة الفعاليات' : 'Event Management Dashboard'}
+                </h1>
                 <p className="text-text-secondary">
-                  Create and manage your events, customize invitations, and track guest responses
+                  {isArabic
+                    ? 'أنشئ فعالياتك وأدرها، وخصص الدعوات، وتابع ردود الضيوف'
+                    : 'Create and manage your events, customize invitations, and track guest responses'}
                 </p>
               </div>
               <QuickActionToolbar />

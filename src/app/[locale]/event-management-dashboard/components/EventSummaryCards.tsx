@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 
 interface SummaryCard {
   label: string
@@ -17,6 +18,8 @@ interface EventSummaryCardsProps {
 }
 
 const EventSummaryCards = ({ cards }: EventSummaryCardsProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const getColorClasses = (color: SummaryCard['color']) => {
     const colorMap = {
       primary: 'bg-primary/10 text-primary',
@@ -50,7 +53,7 @@ const EventSummaryCards = ({ cards }: EventSummaryCardsProps) => {
             )}
           </div>
           <div className="space-y-1">
-            <p className="font-caption text-sm text-text-secondary">{card.label}</p>
+            <p className="font-caption text-sm text-text-secondary">{isArabic ? card.labelAr : card.label}</p>
             <p className="font-mono text-3xl font-bold text-text-primary">{card.value}</p>
           </div>
         </div>

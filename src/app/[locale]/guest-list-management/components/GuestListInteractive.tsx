@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon'
 import { getCurrentSession, getCurrentUser } from '@/lib/auth'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import AddGuestForm from './AddGuestForm'
 import BulkActionsBar from './BulkActionsBar'
@@ -14,6 +15,9 @@ interface Event {
   id: string
   name: string
   date: string
+  title_ar?: string | null
+  name_ar?: string | null
+  status?: string | null
 }
 
 interface Guest {
@@ -42,7 +46,27 @@ interface GuestListInteractiveProps {
   onEventSelected?: (eventId: string) => void
 }
 
+interface WhatsAppResultItem {
+  phone: string
+  status?: string
+  sid?: string
+  errorMessage?: string | null
+}
+
+interface WhatsAppSendReport {
+  senderMode?: 'sandbox' | 'registered'
+  sender?: string
+  sent?: number
+  delivered?: number
+  pending?: number
+  failed?: number
+  hint?: string
+  results?: WhatsAppResultItem[]
+}
+
 const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isHydrated, setIsHydrated] = useState(false)
   const [guests, setGuests] = useState<Guest[]>([])
   const [filteredGuests, setFilteredGuests] = useState<Guest[]>([])
@@ -70,6 +94,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
   const [showAddGuestForm, setShowAddGuestForm] = useState(false)
   const [isLoadingGuests, setIsLoadingGuests] = useState(false)
   const [guestToUpdate, setGuestToUpdate] = useState<Guest | null>(null)
+  const [whatsAppReport, setWhatsAppReport] = useState<WhatsAppSendReport | null>(null)
 
   // Fetch guests for the selected event
   const fetchGuests = async (eventId: string) => {
@@ -287,7 +312,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         throw new Error(data.error || 'Failed to delete guest')
       }
 
-      setUploadSuccess('Guest deleted successfully')
+      setUploadSuccess(isArabic ? 'تم حذف الضيف بنجاح' : 'Guest deleted successfully')
 
       // Refresh guests list
       if (selectedEventId) {
@@ -299,8 +324,75 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
     }
   }
 
-  const handleBulkSendWhatsApp = () => {
-    console.log('Sending WhatsApp to selected guests:', selectedGuests)
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false)
+
+  const handleBulkSendWhatsApp = async () => {
+    if (!userId || !selectedEventId || selectedGuests.length === 0) {
+      setUploadError(isArabic ? 'يرجى تحديد فعالية وضيوف أولاً' : 'Please select an event and guests first')
+      return
+    }
+
+    setIsSendingWhatsApp(true)
+    setUploadError(null)
+    setUploadSuccess(null)
+    setWhatsAppReport(null)
+
+    try {
+      const response = await fetch('/api/whatsapp/send-invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId,
+          eventId: selectedEventId,
+          guestIds: selectedGuests,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to send WhatsApp messages')
+      }
+
+      if (!data.sent || data.sent === 0) {
+        throw new Error(data.message || (isArabic ? 'فشل إرسال رسائل واتساب' : 'Failed to send WhatsApp messages'))
+      }
+
+      setWhatsAppReport({
+        senderMode: data.senderMode,
+        sender: data.sender,
+        sent: data.sent,
+        delivered: data.delivered,
+        pending: data.pending,
+        failed: data.failed,
+        hint: data.hint,
+        results: data.results,
+      })
+
+      setUploadSuccess(
+        isArabic
+          ? `تمت معالجة ${data.sent} رسالة${data.delivered > 0 ? `، تم التسليم ${data.delivered}` : ''}${data.pending > 0 ? `، قيد الانتظار ${data.pending}` : ''}${data.failed > 0 ? `، فشل ${data.failed}` : ''}`
+          : `Processed ${data.sent} message${data.sent !== 1 ? 's' : ''}${data.delivered > 0 ? `, ${data.delivered} delivered` : ''}${data.pending > 0 ? `, ${data.pending} pending` : ''}${data.failed > 0 ? `, ${data.failed} failed` : ''}`
+      )
+      setSelectedGuests([])
+
+      // Refresh guests so delivery status column reflects newest Twilio status.
+      if (selectedEventId) {
+        await fetchGuests(selectedEventId)
+      }
+    } catch (err) {
+      console.error('WhatsApp send error:', err)
+      setUploadError(
+        isArabic
+          ? `فشل إرسال رسائل واتساب: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`
+          : `Failed to send WhatsApp messages: ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
+    } finally {
+      setIsSendingWhatsApp(false)
+    }
   }
 
   const handleBulkUpdateStatus = () => {
@@ -360,14 +452,14 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         if (response.status === 409 && data.duplicates) {
           setDuplicates(data.duplicates)
           setPendingFile(file)
-          setUploadError(data.message || 'Duplicate guests detected. Would you like to replace the entire guest list?')
+          setUploadError(data.message || (isArabic ? 'تم اكتشاف ضيوف مكررين. هل تريد استبدال القائمة بالكامل؟' : 'Duplicate guests detected. Would you like to replace the entire guest list?'))
           return
         }
         throw new Error(data.error || 'Failed to upload file')
       }
 
       console.log('Upload successful:', data)
-      setUploadSuccess(`Successfully imported ${data.guestsCount} guests!`)
+      setUploadSuccess(isArabic ? `تم استيراد ${data.guestsCount} ضيف بنجاح!` : `Successfully imported ${data.guestsCount} guests!`)
       setPendingFile(null)
       setDuplicates([])
 
@@ -398,7 +490,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       return
     }
 
-    if (!confirm('Are you sure you want to delete all guests from this event? This cannot be undone.')) {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف جميع الضيوف من هذه الفعالية؟ لا يمكن التراجع عن ذلك.' : 'Are you sure you want to delete all guests from this event? This cannot be undone.')) {
       return
     }
 
@@ -420,7 +512,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         throw new Error(data.error || 'Failed to delete guests')
       }
 
-      setUploadSuccess('All guests have been deleted successfully')
+      setUploadSuccess(isArabic ? 'تم حذف جميع الضيوف بنجاح' : 'All guests have been deleted successfully')
       setDuplicates([])
       setPendingFile(null)
 
@@ -435,7 +527,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
   }
 
   const handleGuestAdded = async () => {
-    setUploadSuccess('Guest added successfully!')
+    setUploadSuccess(isArabic ? 'تمت إضافة الضيف بنجاح!' : 'Guest added successfully!')
     // Refresh guest list
     if (selectedEventId) {
       await fetchGuests(selectedEventId)
@@ -453,6 +545,20 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
     checkedIn: guests.filter((g) => g.checkInTime !== null).length,
   }
 
+  const getEventDisplayName = (event: Event) => {
+    if (isArabic) {
+      return event.title_ar || event.name_ar || event.name
+    }
+    return event.name
+  }
+
+  const getEventDisplayDate = (eventDate: string) => {
+    if (!eventDate) return ''
+    const parsed = new Date(eventDate)
+    if (Number.isNaN(parsed.getTime())) return eventDate
+    return parsed.toLocaleDateString(isArabic ? 'ar-SA' : 'en-GB')
+  }
+
   if (!isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -466,25 +572,26 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       {/* Event Selector and Upload Status */}
       <div className="mb-6 space-y-4">
         <div className="rounded-lg border border-border bg-card p-6">
-          <label className="mb-3 block text-sm font-medium text-text-primary">Select Event for Guest Upload</label>
+          <label className="mb-3 block text-sm font-medium text-text-primary">{isArabic ? 'اختر الفعالية لرفع الضيوف' : 'Select Event for Guest Upload'}</label>
           <select
             value={selectedEventId}
             onChange={(e) => {
               setSelectedEventId(e.target.value)
               setUploadError(null)
               setUploadSuccess(null)
+              setWhatsAppReport(null)
             }}
             disabled={isLoadingEvents || isUploading}
             className="w-full rounded-lg border border-border bg-background px-4 py-2 text-text-primary focus:border-transparent focus:ring-2 focus:ring-primary disabled:opacity-50"
           >
-            <option value="">-- Select an event --</option>
+            <option value="">{isArabic ? '-- اختر فعالية --' : '-- Select an event --'}</option>
             {events.map((event) => (
               <option key={event.id} value={event.id}>
-                {event.name} ({event.date})
+                {getEventDisplayName(event)} ({getEventDisplayDate(event.date)})
               </option>
             ))}
           </select>
-          {isLoadingEvents && <p className="mt-2 text-sm text-text-secondary">Loading events...</p>}
+          {isLoadingEvents && <p className="mt-2 text-sm text-text-secondary">{isArabic ? 'جارٍ تحميل الفعاليات...' : 'Loading events...'}</p>}
         </div>
 
         {/* Error Message */}
@@ -493,7 +600,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
             <p className="text-sm font-medium">{uploadError}</p>
             {duplicates.length > 0 && (
               <div className="mt-3 space-y-2">
-                <p className="text-xs font-semibold">Duplicate phone numbers:</p>
+                <p className="text-xs font-semibold">{isArabic ? 'أرقام الجوال المكررة:' : 'Duplicate phone numbers:'}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {duplicates.map((phone, idx) => (
                     <span key={idx} className="rounded bg-red-100 px-2 py-1 text-xs">
@@ -507,10 +614,10 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     disabled={isUploading}
                     className="rounded bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                   >
-                    Replace All Guests
+                    {isArabic ? 'استبدال جميع الضيوف' : 'Replace All Guests'}
                   </button>
                   <p className="flex items-center text-xs text-red-600">
-                    This will delete all existing guests and import the new list.
+                    {isArabic ? 'سيؤدي هذا إلى حذف جميع الضيوف الحاليين واستيراد القائمة الجديدة.' : 'This will delete all existing guests and import the new list.'}
                   </p>
                 </div>
               </div>
@@ -524,6 +631,43 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
             <p className="text-sm font-medium">{uploadSuccess}</p>
           </div>
         )}
+
+        {whatsAppReport && (
+          <div
+            className={`rounded-lg border px-4 py-3 ${
+              whatsAppReport.senderMode === 'sandbox'
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                : 'border-blue-200 bg-blue-50 text-blue-800'
+            }`}
+          >
+            <p className="text-sm font-semibold">
+              {isArabic
+                ? whatsAppReport.senderMode === 'sandbox'
+                  ? 'وضع واتساب: Sandbox (للتجربة)'
+                  : 'وضع واتساب: مرسل مسجل'
+                : whatsAppReport.senderMode === 'sandbox'
+                  ? 'WhatsApp mode: Sandbox (testing)'
+                  : 'WhatsApp mode: Registered sender'}
+            </p>
+            {whatsAppReport.sender && <p className="mt-1 text-xs">{isArabic ? `المرسل: ${whatsAppReport.sender}` : `Sender: ${whatsAppReport.sender}`}</p>}
+            <p className="mt-2 text-xs">
+              {isArabic
+                ? `المعالجة: ${whatsAppReport.sent || 0} | التسليم: ${whatsAppReport.delivered || 0} | الانتظار: ${whatsAppReport.pending || 0} | الفشل: ${whatsAppReport.failed || 0}`
+                : `Processed: ${whatsAppReport.sent || 0} | Delivered: ${whatsAppReport.delivered || 0} | Pending: ${whatsAppReport.pending || 0} | Failed: ${whatsAppReport.failed || 0}`}
+            </p>
+            {whatsAppReport.hint && <p className="mt-2 text-xs">{whatsAppReport.hint}</p>}
+            {!!whatsAppReport.results?.length && (
+              <div className="mt-3 max-h-36 overflow-y-auto rounded border border-current/20 bg-white/60 p-2">
+                {whatsAppReport.results.slice(0, 8).map((result, idx) => (
+                  <p key={`${result.sid || result.phone}-${idx}`} className="text-xs">
+                    {result.phone} - {(result.status || 'pending').toUpperCase()}
+                    {result.errorMessage ? ` (${result.errorMessage})` : ''}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Guest Management Options - Side by Side */}
@@ -533,9 +677,9 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
           <div className="mb-4">
             <h3 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
               <Icon name="DocumentArrowUpIcon" className="h-5 w-5 text-primary" ariaLabel="Upload" />
-              Bulk Import from CSV
+              {isArabic ? 'استيراد جماعي من CSV' : 'Bulk Import from CSV'}
             </h3>
-            <p className="text-sm text-text-secondary">Upload a CSV file to add multiple guests at once</p>
+            <p className="text-sm text-text-secondary">{isArabic ? 'ارفع ملف CSV لإضافة عدة ضيوف دفعة واحدة' : 'Upload a CSV file to add multiple guests at once'}</p>
           </div>
           <FileUploadZone
             onFileUpload={handleFileUpload}
@@ -549,26 +693,26 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
           <div className="mb-4">
             <h3 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
               <Icon name="UserPlusIcon" className="h-5 w-5 text-primary" ariaLabel="Add" />
-              Add Guest Manually
+              {isArabic ? 'إضافة ضيف يدويًا' : 'Add Guest Manually'}
             </h3>
-            <p className="mb-4 text-sm text-text-secondary">Enter guest details one by one</p>
+            <p className="mb-4 text-sm text-text-secondary">{isArabic ? 'أدخل بيانات الضيف واحدًا تلو الآخر' : 'Enter guest details one by one'}</p>
           </div>
           <div className="flex flex-col items-center justify-center py-8">
             <div className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <Icon name="UserPlusIcon" size={32} className="text-primary" ariaLabel="Add Guest" />
             </div>
-            <p className="mb-4 text-center text-sm text-text-secondary">Click below to add a single guest</p>
+            <p className="mb-4 text-center text-sm text-text-secondary">{isArabic ? 'اضغط بالأسفل لإضافة ضيف واحد' : 'Click below to add a single guest'}</p>
             <button
               onClick={() => setShowAddGuestForm(true)}
               disabled={!selectedEventId || isUploading}
               className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="UserPlusIcon" className="h-5 w-5" ariaLabel="Add" />
-              Add Guest
+              {isArabic ? 'إضافة ضيف' : 'Add Guest'}
             </button>
             {!selectedEventId && (
               <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-600">
-                Please select an event first
+                {isArabic ? 'يرجى اختيار فعالية أولاً' : 'Please select an event first'}
               </p>
             )}
           </div>
@@ -588,7 +732,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     checked={selectedGuests.length === filteredGuests.length && filteredGuests.length > 0}
                     onChange={handleSelectAll}
                     className="h-4 w-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                    aria-label="Select all guests"
+                    aria-label={isArabic ? 'تحديد جميع الضيوف' : 'Select all guests'}
                   />
                 </th>
                 <th className="px-6 py-4 text-left">
@@ -596,7 +740,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     onClick={() => handleSort('name')}
                     className="transition-smooth flex items-center gap-2 text-sm font-medium text-text-primary hover:text-primary"
                   >
-                    Guest Name
+                    {isArabic ? 'اسم الضيف' : 'Guest Name'}
                     <Icon
                       name="ChevronUpDownIcon"
                       size={16}
@@ -609,7 +753,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     onClick={() => handleSort('phone')}
                     className="transition-smooth flex items-center gap-2 text-sm font-medium text-text-primary hover:text-primary"
                   >
-                    Phone Number
+                    {isArabic ? 'رقم الجوال' : 'Phone Number'}
                     <Icon
                       name="ChevronUpDownIcon"
                       size={16}
@@ -622,7 +766,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     onClick={() => handleSort('deliveryStatus')}
                     className="transition-smooth flex items-center gap-2 text-sm font-medium text-text-primary hover:text-primary"
                   >
-                    Delivery Status
+                    {isArabic ? 'حالة الإرسال' : 'Delivery Status'}
                     <Icon
                       name="ChevronUpDownIcon"
                       size={16}
@@ -635,7 +779,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     onClick={() => handleSort('responseStatus')}
                     className="transition-smooth flex items-center gap-2 text-sm font-medium text-text-primary hover:text-primary"
                   >
-                    Response Status
+                    {isArabic ? 'حالة الرد' : 'Response Status'}
                     <Icon
                       name="ChevronUpDownIcon"
                       size={16}
@@ -648,7 +792,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                     onClick={() => handleSort('checkInTime')}
                     className="transition-smooth flex items-center gap-2 text-sm font-medium text-text-primary hover:text-primary"
                   >
-                    Check-in Time
+                    {isArabic ? 'وقت تسجيل الحضور' : 'Check-in Time'}
                     <Icon
                       name="ChevronUpDownIcon"
                       size={16}
@@ -657,10 +801,10 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
                   </button>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-sm font-medium text-text-primary">Plus Ones</span>
+                  <span className="text-sm font-medium text-text-primary">{isArabic ? 'المرافقون' : 'Plus Ones'}</span>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-sm font-medium text-text-primary">Actions</span>
+                  <span className="text-sm font-medium text-text-primary">{isArabic ? 'الإجراءات' : 'Actions'}</span>
                 </th>
               </tr>
             </thead>
@@ -681,16 +825,20 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
           {isLoadingGuests ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="font-medium text-text-primary">Loading guests...</p>
+              <p className="font-medium text-text-primary">{isArabic ? 'جارٍ تحميل الضيوف...' : 'Loading guests...'}</p>
             </div>
           ) : filteredGuests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Icon name="UserGroupIcon" size={48} className="mb-4 text-text-secondary" />
-              <p className="mb-1 font-medium text-text-primary">No guests found</p>
+              <p className="mb-1 font-medium text-text-primary">{isArabic ? 'لا يوجد ضيوف' : 'No guests found'}</p>
               <p className="text-sm text-text-secondary">
                 {guests.length === 0
-                  ? 'Add your first guest using CSV upload or manual entry above'
-                  : 'Try adjusting your filters or search query'}
+                  ? isArabic
+                    ? 'أضف أول ضيف باستخدام رفع CSV أو الإدخال اليدوي أعلاه'
+                    : 'Add your first guest using CSV upload or manual entry above'
+                  : isArabic
+                    ? 'جرّب تعديل الفلاتر أو عبارة البحث'
+                    : 'Try adjusting your filters or search query'}
               </p>
             </div>
           ) : null}
@@ -700,7 +848,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
           {isLoadingGuests ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="font-medium text-text-primary">Loading guests...</p>
+              <p className="font-medium text-text-primary">{isArabic ? 'جارٍ تحميل الضيوف...' : 'Loading guests...'}</p>
             </div>
           ) : (
             <>
@@ -718,11 +866,15 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
               {filteredGuests.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Icon name="UserGroupIcon" size={48} className="mb-4 text-text-secondary" />
-                  <p className="mb-1 font-medium text-text-primary">No guests found</p>
+                  <p className="mb-1 font-medium text-text-primary">{isArabic ? 'لا يوجد ضيوف' : 'No guests found'}</p>
                   <p className="text-center text-sm text-text-secondary">
                     {guests.length === 0
-                      ? 'Add your first guest using CSV upload or manual entry above'
-                      : 'Try adjusting your filters or search query'}
+                      ? isArabic
+                        ? 'أضف أول ضيف باستخدام رفع CSV أو الإدخال اليدوي أعلاه'
+                        : 'Add your first guest using CSV upload or manual entry above'
+                      : isArabic
+                        ? 'جرّب تعديل الفلاتر أو عبارة البحث'
+                        : 'Try adjusting your filters or search query'}
                   </p>
                 </div>
               )}
@@ -734,6 +886,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       <BulkActionsBar
         selectedCount={selectedGuests.length}
         onSendWhatsApp={handleBulkSendWhatsApp}
+        isSendingWhatsApp={isSendingWhatsApp}
         onUpdateStatus={handleBulkUpdateStatus}
         onExportExcel={handleBulkExportExcel}
         onGenerateQRCodes={handleBulkGenerateQRCodes}

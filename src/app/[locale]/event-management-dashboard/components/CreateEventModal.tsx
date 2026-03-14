@@ -1,6 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 
 interface CreateEventModalProps {
@@ -21,6 +22,8 @@ interface EventFormData {
 }
 
 const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEventModalProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [isHydrated, setIsHydrated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +70,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
       await onSubmit(formData)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save event')
+      setError(err instanceof Error ? err.message : isArabic ? 'فشل حفظ الفعالية' : 'Failed to save event')
     } finally {
       setIsLoading(false)
     }
@@ -88,12 +91,12 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
         <div className="pointer-events-auto my-8 flex max-h-[calc(100vh-4rem)] w-full max-w-2xl animate-slide-up flex-col rounded-xl bg-card shadow-warm-xl">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-6 py-4">
             <h2 className="font-heading text-2xl font-semibold text-text-primary">
-              {editingEvent ? 'Edit Event' : 'Create New Event'}
+              {editingEvent ? (isArabic ? 'تعديل الفعالية' : 'Edit Event') : isArabic ? 'إنشاء فعالية جديدة' : 'Create New Event'}
             </h2>
             <button
               onClick={onClose}
               className="transition-smooth rounded-md p-2 text-text-secondary hover:bg-muted hover:text-text-primary"
-              aria-label="Close modal"
+              aria-label={isArabic ? 'إغلاق النافذة' : 'Close modal'}
             >
               <Icon name="XMarkIcon" size={24} />
             </button>
@@ -104,7 +107,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
 
             <div>
               <label htmlFor="name" className="mb-2 block text-sm font-medium text-text-primary">
-                Event Name *
+                {isArabic ? 'اسم الفعالية' : 'Event Name'} *
               </label>
               <input
                 type="text"
@@ -115,14 +118,14 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 required
                 autoFocus
                 className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                placeholder="e.g., Wedding - Sarah & Ahmed"
+                placeholder={isArabic ? 'مثال: حفل زفاف - سارة وأحمد' : 'e.g., Wedding - Sarah & Ahmed'}
               />
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <label htmlFor="date" className="mb-2 block text-sm font-medium text-text-primary">
-                  Event Date *
+                  {isArabic ? 'تاريخ الفعالية' : 'Event Date'} *
                 </label>
                 <input
                   type="date"
@@ -137,7 +140,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
 
               <div>
                 <label htmlFor="eventType" className="mb-2 block text-sm font-medium text-text-primary">
-                  Event Type *
+                  {isArabic ? 'نوع الفعالية' : 'Event Type'} *
                 </label>
                 <select
                   id="eventType"
@@ -147,18 +150,18 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                   required
                   className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
                 >
-                  <option value="wedding">Wedding</option>
-                  <option value="corporate">Corporate Event</option>
-                  <option value="birthday">Birthday Party</option>
-                  <option value="conference">Conference</option>
-                  <option value="other">Other</option>
+                  <option value="wedding">{isArabic ? 'زفاف' : 'Wedding'}</option>
+                  <option value="corporate">{isArabic ? 'فعالية مؤسسية' : 'Corporate Event'}</option>
+                  <option value="birthday">{isArabic ? 'حفلة عيد ميلاد' : 'Birthday Party'}</option>
+                  <option value="conference">{isArabic ? 'مؤتمر' : 'Conference'}</option>
+                  <option value="other">{isArabic ? 'أخرى' : 'Other'}</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label htmlFor="venue" className="mb-2 block text-sm font-medium text-text-primary">
-                Venue *
+                {isArabic ? 'المكان' : 'Venue'} *
               </label>
               <input
                 type="text"
@@ -168,13 +171,13 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 onChange={handleChange}
                 required
                 className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                placeholder="e.g., Grand Ballroom, Riyadh"
+                placeholder={isArabic ? 'مثال: القاعة الكبرى، الرياض' : 'e.g., Grand Ballroom, Riyadh'}
               />
             </div>
 
             <div>
               <label htmlFor="expectedGuests" className="mb-2 block text-sm font-medium text-text-primary">
-                Expected Number of Guests *
+                {isArabic ? 'العدد المتوقع للضيوف' : 'Expected Number of Guests'} *
               </label>
               <input
                 type="number"
@@ -185,13 +188,13 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 required
                 min="1"
                 className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                placeholder="e.g., 250"
+                placeholder={isArabic ? 'مثال: 250' : 'e.g., 250'}
               />
             </div>
 
             <div>
               <label htmlFor="description" className="mb-2 block text-sm font-medium text-text-primary">
-                Event Description
+                {isArabic ? 'وصف الفعالية' : 'Event Description'}
               </label>
               <textarea
                 id="description"
@@ -200,7 +203,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 onChange={handleChange}
                 rows={4}
                 className="transition-smooth w-full resize-none rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
-                placeholder="Add any additional details about your event..."
+                placeholder={isArabic ? 'أضف أي تفاصيل إضافية عن فعاليتك...' : 'Add any additional details about your event...'}
               />
             </div>
 
@@ -211,7 +214,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 disabled={isLoading}
                 className="transition-smooth hover:bg-muted/80 flex-1 rounded-md bg-muted px-6 py-3 font-medium text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Cancel
+                {isArabic ? 'إلغاء' : 'Cancel'}
               </button>
               <button
                 type="submit"
@@ -221,12 +224,12 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                 {isLoading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                    Creating...
+                    {isArabic ? 'جارٍ الإنشاء...' : 'Creating...'}
                   </>
                 ) : editingEvent ? (
-                  'Update Event'
+                  isArabic ? 'تحديث الفعالية' : 'Update Event'
                 ) : (
-                  'Create Event'
+                  isArabic ? 'إنشاء فعالية' : 'Create Event'
                 )}
               </button>
             </div>

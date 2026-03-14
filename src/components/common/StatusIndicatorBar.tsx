@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon'
 import { getCurrentUser } from '@/lib/auth'
+import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 
 interface StatusMetric {
@@ -18,6 +19,8 @@ interface StatusIndicatorBarProps {
 }
 
 const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [metrics, setMetrics] = useState<StatusMetric[]>([
     {
       label: 'Invitations Sent',
@@ -34,8 +37,8 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
       color: 'success',
     },
     {
-      label: 'Pending Responses',
-      labelAr: 'الردود المعلقة',
+      label: 'Awaiting RSVP',
+      labelAr: 'بانتظار الرد',
       value: 0,
       icon: 'ClockIcon',
       color: 'warning',
@@ -118,7 +121,7 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
                   <Icon name={metric.icon as any} size={20} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-caption text-xs text-text-secondary">{metric.label}</span>
+                  <span className="font-caption text-xs text-text-secondary">{isArabic ? metric.labelAr : metric.label}</span>
                   <span className="font-mono text-lg font-semibold text-text-primary">{metric.value}</span>
                 </div>
               </div>
@@ -130,11 +133,11 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
               onClick={() => setIsExpanded(!isExpanded)}
               className="transition-smooth hover:bg-muted/80 flex w-full items-center justify-between rounded-md bg-muted px-4 py-2"
               aria-expanded={isExpanded}
-              aria-label="Toggle status metrics"
+              aria-label={isArabic ? 'تبديل مؤشرات الحالة' : 'Toggle status metrics'}
             >
               <div className="flex items-center gap-3">
                 <Icon name="ChartBarIcon" size={20} className="text-primary" />
-                <span className="text-sm font-medium text-text-primary">Event Status</span>
+                <span className="text-sm font-medium text-text-primary">{isArabic ? 'حالة الفعالية' : 'Event Status'}</span>
               </div>
               <Icon
                 name="ChevronDownIcon"
@@ -151,7 +154,7 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
                       <Icon name={metric.icon as any} size={16} />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-caption text-xs text-text-secondary">{metric.label}</span>
+                      <span className="font-caption text-xs text-text-secondary">{isArabic ? metric.labelAr : metric.label}</span>
                       <span className="font-mono text-base font-semibold text-text-primary">{metric.value}</span>
                     </div>
                   </div>
@@ -163,7 +166,7 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
           <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-1">
               <div className="h-2 w-2 animate-pulse-subtle rounded-full bg-success" />
-              <span className="font-caption text-xs text-text-secondary">Live Updates</span>
+              <span className="font-caption text-xs text-text-secondary">{isArabic ? 'تحديثات مباشرة' : 'Live Updates'}</span>
             </div>
           </div>
         </div>

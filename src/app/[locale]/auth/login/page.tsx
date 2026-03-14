@@ -1,19 +1,32 @@
 'use client'
 
+import LocaleSwitch from '@/components/common/LocaleSwitch'
 import { getCurrentUser, signInUser } from '@/lib/auth'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
-  const t = useTranslations()
   const router = useRouter()
   const locale = useLocale()
+  const isArabic = locale === 'ar'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const content = {
+    signIn: isArabic ? 'تسجيل الدخول' : 'Sign In',
+    register: isArabic ? 'إنشاء حساب' : 'Register',
+    title: isArabic ? 'سجّل الدخول إلى حسابك' : 'Sign in to your account',
+    email: isArabic ? 'البريد الإلكتروني' : 'Email address',
+    password: isArabic ? 'كلمة المرور' : 'Password',
+    forgotPassword: isArabic ? 'نسيت كلمة المرور؟' : 'Forgot password?',
+    loading: isArabic ? 'جارٍ تسجيل الدخول...' : 'Signing in...',
+    noAccount: isArabic ? 'ليس لديك حساب؟' : 'Do not have an account?',
+    failed: isArabic ? 'فشل تسجيل الدخول' : 'Failed to sign in',
+  }
 
   useEffect(() => {
     const redirectIfAuthenticated = async () => {
@@ -23,7 +36,6 @@ export default function LoginPage() {
           router.replace(`/${locale}/event-management-dashboard`)
         }
       } catch {
-        // ignore unauthenticated state
       }
     }
 
@@ -41,7 +53,7 @@ export default function LoginPage() {
       // Redirect to dashboard after successful login
       router.replace(`/${locale}/event-management-dashboard`)
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in')
+      setError(err.message || content.failed)
     } finally {
       setLoading(false)
     }
@@ -60,17 +72,18 @@ export default function LoginPage() {
               <span className="text-lg font-bold text-gray-900 sm:text-xl">Marasim</span>
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">
+              <LocaleSwitch />
               <Link
                 href={`/${locale}/auth/login`}
                 className="px-2 py-2 text-xs font-medium text-gray-700 hover:text-gray-900 sm:px-4 sm:text-sm"
               >
-                Sign In
+                {content.signIn}
               </Link>
               <Link
                 href={`/${locale}/auth/register`}
                 className="whitespace-nowrap rounded-lg bg-blue-600 px-2 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700 sm:px-4 sm:text-sm"
               >
-                Register
+                {content.register}
               </Link>
             </div>
           </div>
@@ -80,7 +93,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-24 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{content.title}</h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             {error && (
@@ -92,7 +105,7 @@ export default function LoginPage() {
             <div className="-space-y-px rounded-md shadow-sm">
               <div>
                 <label htmlFor="email" className="sr-only">
-                  Email address
+                  {content.email}
                 </label>
                 <input
                   id="email"
@@ -101,7 +114,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   required
                   className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  placeholder="Email address"
+                  placeholder={content.email}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -109,7 +122,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <label htmlFor="password" className="sr-only">
-                  Password
+                  {content.password}
                 </label>
                 <input
                   id="password"
@@ -118,7 +131,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   required
                   className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  placeholder="Password"
+                  placeholder={content.password}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
@@ -132,7 +145,7 @@ export default function LoginPage() {
                 href={`/${locale}/auth/forgot-password`}
                 className="text-sm font-medium text-blue-600 hover:text-blue-500"
               >
-                Forgot password?
+                {content.forgotPassword}
               </Link>
             </div>
 
@@ -142,14 +155,14 @@ export default function LoginPage() {
                 disabled={loading}
                 className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? content.loading : content.signIn}
               </button>
             </div>
 
             <div className="text-center text-sm">
-              <span className="text-gray-600">Do not have an account? </span>
+              <span className="text-gray-600">{content.noAccount} </span>
               <Link href={`/${locale}/auth/register`} className="text-blue-600 hover:text-blue-500">
-                Register
+                {content.register}
               </Link>
             </div>
           </form>

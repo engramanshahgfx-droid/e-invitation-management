@@ -1,7 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getLatestWhatsAppStatusForRecipient } from '@/lib/twilio'
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '')
+
+function normalizeDeliveryStatus(status?: string | null): 'delivered' | 'failed' | 'pending' | 'read' {
+  const normalized = (status || '').toLowerCase()
+
+  if (normalized === 'read') return 'read'
+  if (normalized === 'failed' || normalized === 'undelivered') return 'failed'
+  if (normalized === 'delivered' || normalized === 'sent') return 'delivered'
+
+  return 'pending'
+}
 
 // Helper to get authorized user
 async function getAuthorizedUser(request: NextRequest) {
@@ -75,12 +87,12 @@ export async function GET(request: NextRequest) {
 
     // Fetch message statuses for these guests (latest message per guest)
     const guestIds = guests?.map((g) => g.id) || []
-    const messageStatuses: Record<string, { deliveryStatus: string; sentAt: string | null }> = {}
+    const messageStatuses: Record<string, { messageId?: string; deliveryStatus: string; sentAt: string | null; errorMessage?: string | null }> = {}
 
     if (guestIds.length > 0) {
       const { data: messages } = await supabase
         .from('messages')
-        .select('guest_id, status, sent_at')
+        .select('id, guest_id, status, sent_at, error_message')
         .in('guest_id', guestIds)
         .order('created_at', { ascending: false })
 
@@ -89,13 +101,54 @@ export async function GET(request: NextRequest) {
         messages.forEach((msg: any) => {
           if (!messageStatuses[msg.guest_id]) {
             messageStatuses[msg.guest_id] = {
+              messageId: msg.id,
               deliveryStatus: msg.status,
               sentAt: msg.sent_at,
+              errorMessage: msg.error_message,
             }
           }
         })
       }
     }
+
+    const liveStatusUpdates = await Promise.all(
+      (guests || []).map(async (guest) => {
+        const current = messageStatuses[guest.id]
+        if (!guest.phone || !current || !['pending', 'sent'].includes((current.deliveryStatus || '').toLowerCase())) {
+          return null
+        }
+
+        const latest = await getLatestWhatsAppStatusForRecipient(guest.phone)
+        if (!latest) {
+          return null
+        }
+
+        const normalizedStatus = normalizeDeliveryStatus(latest.status)
+        if (normalizedStatus === normalizeDeliveryStatus(current.deliveryStatus) && !latest.errorHint && !latest.errorMessage) {
+          return null
+        }
+
+        messageStatuses[guest.id] = {
+          ...current,
+          deliveryStatus: latest.status || current.deliveryStatus,
+          sentAt: latest.sentAt?.toISOString?.() || current.sentAt,
+          errorMessage: latest.errorMessage || latest.errorHint || current.errorMessage || null,
+        }
+
+        if (current.messageId) {
+          await supabase
+            .from('messages')
+            .update({
+              status: normalizedStatus,
+              delivered_at: normalizedStatus === 'delivered' || normalizedStatus === 'read' ? new Date().toISOString() : null,
+              error_message: latest.errorMessage || latest.errorHint || null,
+            })
+            .eq('id', current.messageId)
+        }
+
+        return true
+      })
+    )
 
     // Transform guests data to match frontend interface
     const transformedGuests =
@@ -107,7 +160,7 @@ export async function GET(request: NextRequest) {
           phone: guest.phone,
           email: guest.email,
           invitationStatus: msgStatus?.sentAt ? 'sent' : 'pending',
-          deliveryStatus: msgStatus?.deliveryStatus || 'pending',
+          deliveryStatus: normalizeDeliveryStatus(msgStatus?.deliveryStatus),
           responseStatus: guest.status === 'no_response' ? 'no-response' : guest.status,
           checkInTime: guest.checked_in_at,
           qrCode: guest.qr_token,

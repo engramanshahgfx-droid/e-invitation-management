@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/AppIcon'
+import { useLocale } from 'next-intl'
 
 interface Event {
   id: string
@@ -36,6 +37,8 @@ const EventTableRow = ({
   onViewAnalytics,
   onArchive,
 }: EventTableRowProps) => {
+  const locale = useLocale()
+  const isArabic = locale === 'ar'
   const getStatusColor = (status: Event['status']) => {
     const statusMap = {
       upcoming: 'bg-primary/10 text-primary',
@@ -48,10 +51,10 @@ const EventTableRow = ({
 
   const getStatusLabel = (status: Event['status']) => {
     const labelMap = {
-      upcoming: 'Upcoming',
-      ongoing: 'Ongoing',
-      completed: 'Completed',
-      draft: 'Draft',
+      upcoming: isArabic ? 'قادم' : 'Upcoming',
+      ongoing: isArabic ? 'جارٍ' : 'Ongoing',
+      completed: isArabic ? 'مكتمل' : 'Completed',
+      draft: isArabic ? 'مسودة' : 'Draft',
     }
     return labelMap[status]
   }
@@ -73,7 +76,7 @@ const EventTableRow = ({
           checked={isSelected}
           onChange={onSelect}
           className="h-4 w-4 rounded border-border text-primary focus:ring-3 focus:ring-ring focus:ring-offset-2"
-          aria-label={`Select ${event.name}`}
+          aria-label={isArabic ? `تحديد ${event.name}` : `Select ${event.name}`}
         />
       </td>
       <td className="px-6 py-4">
@@ -112,32 +115,32 @@ const EventTableRow = ({
           <button
             onClick={onEdit}
             className="hover:bg-primary/10 transition-smooth rounded-md p-2 text-primary"
-            aria-label={`Edit ${event.name}`}
-            title="Edit Event"
+            aria-label={isArabic ? `تعديل ${event.name}` : `Edit ${event.name}`}
+            title={isArabic ? 'تعديل الفعالية' : 'Edit Event'}
           >
             <Icon name="PencilIcon" size={18} />
           </button>
           <button
             onClick={onDuplicate}
             className="hover:bg-secondary/10 transition-smooth rounded-md p-2 text-secondary"
-            aria-label={`Duplicate ${event.name}`}
-            title="Duplicate Event"
+            aria-label={isArabic ? `نسخ ${event.name}` : `Duplicate ${event.name}`}
+            title={isArabic ? 'نسخ الفعالية' : 'Duplicate Event'}
           >
             <Icon name="DocumentDuplicateIcon" size={18} />
           </button>
           <button
             onClick={onViewAnalytics}
             className="hover:bg-accent/10 transition-smooth rounded-md p-2 text-accent"
-            aria-label={`View analytics for ${event.name}`}
-            title="View Analytics"
+            aria-label={isArabic ? `عرض تحليلات ${event.name}` : `View analytics for ${event.name}`}
+            title={isArabic ? 'عرض التحليلات' : 'View Analytics'}
           >
             <Icon name="ChartBarIcon" size={18} />
           </button>
           <button
             onClick={onArchive}
             className="hover:bg-destructive/10 transition-smooth rounded-md p-2 text-destructive"
-            aria-label={`Archive ${event.name}`}
-            title="Archive Event"
+            aria-label={isArabic ? `أرشفة ${event.name}` : `Archive ${event.name}`}
+            title={isArabic ? 'أرشفة الفعالية' : 'Archive Event'}
           >
             <Icon name="ArchiveBoxIcon" size={18} />
           </button>
