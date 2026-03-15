@@ -299,11 +299,20 @@ export const en = {
     Subscription: 'Subscription',
     popular: 'POPULAR',
   },
-    "FounderSubheading": "Leading hotel booking services in Mecca and Medina",
-  "FounderParagraph1": "SuperHotel is a leading website offering hotel booking services in Mecca and Medina, affiliated with Atrujah Al-Hijaz Company in Saudi Arabia. The site is distinguished by providing competitive prices lower than those available on other global websites, making it the ideal choice for visitors looking for the best value for money.",
-  "FounderParagraph2": "Thanks to our diverse services, visitors can choose to book by bed or by room, meeting their various needs and providing them with a comfortable and personalized experience. We are committed to offering the best deals and options to ensure customer satisfaction and provide an easy and smooth booking experience.",
-  "FounderParagraph3": "Choosing SuperHotel means benefiting from reliable and secure services, backed by Atrujah Al-Hijaz Company's experience in the hospitality and hotel booking sector. Whether you're planning a religious or tourist trip, Bedinroom is your best choice to ensure a comfortable and safe stay, with reliable services and continuous support from our outstanding team, at unbeatable prices."
-
+  demoBanner: {
+    freeplan: 'You are on the',
+    'Free Plan': 'Free Plan',
+    event: 'Event',
+    guests: 'Guests',
+    'Upgrade to unlock': 'Upgrade to unlock all features',
+    'Upgrade Now': 'Upgrade Now →',
+  },
+  founder: {
+    FounderSubheading: 'Leading hotel booking services in Mecca and Medina',
+    FounderParagraph1: 'SuperHotel is a leading website offering hotel booking services in Mecca and Medina, affiliated with Atrujah Al-Hijaz Company in Saudi Arabia. The site is distinguished by providing competitive prices lower than those available on other global websites, making it the ideal choice for visitors looking for the best value for money.',
+    FounderParagraph2: 'Thanks to our diverse services, visitors can choose to book by bed or by room, meeting their various needs and providing them with a comfortable and personalized experience. We are committed to offering the best deals and options to ensure customer satisfaction and provide an easy and smooth booking experience.',
+    FounderParagraph3: 'Choosing SuperHotel means benefiting from reliable and secure services, backed by Atrujah Al-Hijaz Company\'s experience in the hospitality and hotel booking sector. Whether you\'re planning a religious or tourist trip, Bedinroom is your best choice to ensure a comfortable and safe stay, with reliable services and continuous support from our outstanding team, at unbeatable prices.',
+  },
 }
 
 export default en;

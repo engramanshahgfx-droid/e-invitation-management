@@ -87,8 +87,9 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
   return (
     <>
       <div className="animate-fade-in fixed inset-0 z-[999] bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4">
-        <div className="pointer-events-auto my-8 flex max-h-[calc(100vh-4rem)] w-full max-w-2xl animate-slide-up flex-col rounded-xl bg-card shadow-warm-xl">
+      <div className="pointer-events-none fixed inset-0 z-[9999] overflow-y-auto">
+        <div className="pointer-events-none flex min-h-full items-center justify-center p-4">
+        <div className="pointer-events-auto my-8 w-full max-w-2xl animate-slide-up flex flex-col rounded-xl bg-card shadow-warm-xl">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-6 py-4">
             <h2 className="font-heading text-2xl font-semibold text-text-primary">
               {editingEvent
@@ -248,6 +249,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
               </button>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </>

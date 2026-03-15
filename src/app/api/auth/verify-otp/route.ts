@@ -36,8 +36,9 @@ function formatPhoneE164(phone: string | undefined): string | undefined {
 export async function POST(request: NextRequest) {
   try {
     const { email, code, fullName, phone } = await request.json()
+    const normalizedEmail = String(email || '').trim().toLowerCase()
 
-    if (!email || !code) {
+    if (!normalizedEmail || !code) {
       return NextResponse.json({ error: 'Email and code are required' }, { status: 400 })
     }
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { data: otpRecord, error: otpError } = await supabaseAdmin
       .from('verification_codes')
       .select('*')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .eq('code', code)
       .single()
 
@@ -59,12 +60,12 @@ export async function POST(request: NextRequest) {
 
     // Check expiry
     if (new Date(otpRecord.expires_at) < new Date()) {
-      await supabaseAdmin.from('verification_codes').delete().eq('email', email)
+      await supabaseAdmin.from('verification_codes').delete().eq('email', normalizedEmail)
       return NextResponse.json({ error: 'Verification code has expired' }, { status: 400 })
     }
 
     // Delete used code
-    await supabaseAdmin.from('verification_codes').delete().eq('email', email)
+    await supabaseAdmin.from('verification_codes').delete().eq('email', normalizedEmail)
 
     // Format phone to E.164 if provided
     let formattedPhone = formatPhoneE164(phone)
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     const tempPassword = crypto.randomUUID()
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: normalizedEmail,
       password: tempPassword,
       email_confirm: true,
       // Only add phone if it's valid and not already registered
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     const { error: profileError } = await supabaseAdmin.from('users').insert([
       {
         id: authData.user.id,
-        email,
+        email: normalizedEmail,
         phone: formattedPhone || null,
         full_name: fullName || '',
         account_type: 'free',

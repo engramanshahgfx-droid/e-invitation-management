@@ -200,7 +200,7 @@ export default function RegisterPage() {
                     id="phone"
                     type="tel"
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                    placeholder="+966551234567"
+                    placeholder="966551234567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={loading}
@@ -261,9 +261,9 @@ export default function RegisterPage() {
                   disabled={loading}
                   autoFocus
                 />
-                +{' '}
+                {' '}
               </div>
-              + + <div className="text-sm text-gray-600">{content.signInHere}</div>+ +{' '}
+               <div className="text-sm text-gray-600">{content.signInHere}</div> {' '}
               <button
                 type="submit"
                 disabled={loading || otp.length < 6}

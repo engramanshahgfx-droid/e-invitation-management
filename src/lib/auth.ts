@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-// Send email OTP via SendGrid (server-side API route)
+// Send email OTP via Resend (server-side API route)
 export async function sendOTP(email: string) {
   const res = await fetch('/api/auth/send-otp', {
     method: 'POST',

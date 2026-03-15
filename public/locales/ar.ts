@@ -290,6 +290,14 @@
     Subscription: 'الاشتراك',
     popular: 'الأكثر شيوعًا',
   },
+  demoBanner: {
+    freeplan: 'أنت على',
+    'Free Plan': 'الخطة المجانية',
+    event: 'فعالية',
+    guests: 'ضيوف',
+    'Upgrade to unlock': 'الترقية لفتح جميع الميزات',
+    'Upgrade Now': 'الترقية الآن ←',
+  },
 }
 
 export default ar;
