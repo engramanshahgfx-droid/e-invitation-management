@@ -30,8 +30,8 @@ interface TemplateCustomizationEditorProps {
   onCancel?: () => void
 }
 
-type ActivePanel = null | 'backdrop' | 'stickers' | 'logo' | 'header' | 'text' | 'colors' | 'font'
-type CanvasItemType = 'sticker' | 'text' | 'logo'
+type ActivePanel = null | 'backdrop' | 'stickers' | 'frames' | 'photos' | 'logo' | 'header' | 'text' | 'colors' | 'font'
+ type CanvasItemType = 'sticker' | 'frame' | 'photo' | 'text' | 'logo'
 
 type CanvasItem = {
   id: string
@@ -118,6 +118,12 @@ const STICKER_OPTIONS = [
   { id: 46, name: 'And Script', imageUrl: 'https://assets.ppassets.com/p-4rF12kP28Ne6vIMnbWcfxK/flyer/sticker_svg/static_thumb_small' },
   { id: 47, name: 'Peace on Earth', imageUrl: 'https://assets.ppassets.com/p-1GPRqZt1jWnFoexdL54dOP/flyer/sticker_svg/static_thumb_small' },
   { id: 48, name: 'Peony', imageUrl: 'https://assets.ppassets.com/p-2M7X9pNK15ZkzGY81ikyPG/flyer/sticker_svg/static_thumb_small' },
+]
+
+const FRAME_OPTIONS = [
+  { id: 1, name: 'Classic Gold Frame', imageUrl: 'https://assets.ppassets.com/p-39P0gdfkU3fgfTzYzzY6fQ/flyer/sticker_svg/static_thumb_small' },
+  { id: 2, name: 'Floral Frame Border', imageUrl: 'https://assets.ppassets.com/p-1GQatvhIZvi3mju5bGMbKt/flyer/sticker_svg/static_thumb_small' },
+  { id: 3, name: 'Art Deco Frame', imageUrl: 'https://assets.ppassets.com/p-4xPs5dx3DT4J3SjOyHNrDT/flyer/sticker_svg/static_thumb_small' },
 ]
 
 const FONT_OPTIONS = [
@@ -354,6 +360,42 @@ export default function TemplateCustomizationEditor({
     setSelectedItemId(item.id)
   }
 
+  const addFrame = (frameId: number, frameName: string, imageUrl: string) => {
+    const item: CanvasItem = {
+      id: createItemId('frame'),
+      type: 'frame',
+      x: 380,
+      y: 280,
+      scale: 1.15,
+      rotation: 0,
+      zIndex: 999,
+      stickerImageUrl: imageUrl,
+      stickerName: frameName,
+    }
+    setCanvasItems((prev) => [...prev, item])
+    setSelectedItemId(item.id)
+  }
+
+  const addPhoto = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const src = String(event.target?.result || '')
+      const item: CanvasItem = {
+        id: createItemId('photo'),
+        type: 'photo',
+        x: 380,
+        y: 280,
+        scale: 1,
+        rotation: 0,
+        zIndex: canvasItems.length + 10,
+        src,
+      }
+      setCanvasItems((prev) => [...prev, item])
+      setSelectedItemId(item.id)
+    }
+    reader.readAsDataURL(file)
+  }
+
   const addTextBlock = () => {
     const item: CanvasItem = {
       id: createItemId('text'),
@@ -549,17 +591,33 @@ export default function TemplateCustomizationEditor({
       </>
     ) : null
 
-    if (item.type === 'sticker') {
+    if (item.type === 'sticker' || item.type === 'frame') {
+      const sizeClass = item.type === 'frame' ? 'h-96 w-96' : 'h-24 w-24'
       return (
         <div key={item.id} style={commonStyle} onMouseDown={(e) => onCanvasItemMouseDown(e, item.id)}>
           {item.stickerImageUrl ? (
             <img 
               src={item.stickerImageUrl} 
-              alt={item.stickerName || 'Sticker'} 
-              className="h-24 w-24 object-contain drop-shadow-sm"
+              alt={item.stickerName || (item.type === 'frame' ? 'Frame' : 'Sticker')} 
+              className={`${sizeClass} object-contain drop-shadow-sm`} 
             />
           ) : (
-            <span style={{ color: item.color || '#111111', fontSize: 40 }}>{item.stickerGlyph || '✦'}</span>
+            <span style={{ color: item.color || '#111111', fontSize: item.type === 'frame' ? 54 : 40 }}>
+              {item.stickerGlyph || (item.type === 'frame' ? '🖼️' : '✦')}
+            </span>
+          )}
+          {handles}
+        </div>
+      )
+    }
+
+    if (item.type === 'photo') {
+      return (
+        <div key={item.id} style={commonStyle} onMouseDown={(e) => onCanvasItemMouseDown(e, item.id)}>
+          {item.src ? (
+            <img src={item.src} alt="Uploaded" className="h-40 w-40 rounded shadow-md object-cover" />
+          ) : (
+            <div className="h-40 w-40 rounded bg-gray-200" />
           )}
           {handles}
         </div>
@@ -599,7 +657,7 @@ export default function TemplateCustomizationEditor({
 
   return (
     <div className="min-h-screen bg-[#f2f2f2]">
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-300 bg-white px-6 py-3">
+      <div className="sticky top-16 z-40 flex items-center justify-between border-b border-gray-300 bg-white px-6 py-3">
         <div className="flex items-center gap-3">
           <button onClick={onCancel} className="rounded p-1 text-gray-700 hover:bg-gray-100">
             X
@@ -621,6 +679,14 @@ export default function TemplateCustomizationEditor({
         </div>
       </div>
 
+      <button
+        onClick={handleSave}
+        disabled={isSaving}
+        className="fixed bottom-6 right-6 z-[70] rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-blue-700 disabled:opacity-60"
+      >
+        {isSaving ? (isArabic ? 'جاري الحفظ...' : 'Saving...') : isArabic ? 'حفظ' : 'Save'}
+      </button>
+
       {saveError && <div className="mx-4 mt-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</div>}
 
       <div className="flex h-[calc(100vh-62px)]">
@@ -628,6 +694,8 @@ export default function TemplateCustomizationEditor({
           <div className="space-y-2">
             <ToolButton icon="B" label={isArabic ? 'خلفية' : 'Backdrop'} active={activePanel === 'backdrop'} onClick={() => setActivePanel('backdrop')} />
             <ToolButton icon="S" label={isArabic ? 'ملصقات' : 'Stickers'} active={activePanel === 'stickers'} onClick={() => setActivePanel('stickers')} />
+            <ToolButton icon="F" label={isArabic ? 'إطارات' : 'Frames'} active={activePanel === 'frames'} onClick={() => setActivePanel('frames')} />
+            <ToolButton icon="P" label={isArabic ? 'صور' : 'Photos'} active={activePanel === 'photos'} onClick={() => setActivePanel('photos')} />
             <ToolButton icon="L" label={isArabic ? 'شعار' : 'Add logo'} active={activePanel === 'logo'} onClick={() => setActivePanel('logo')} />
             <ToolButton icon="H" label={isArabic ? 'رأس' : 'Header'} active={activePanel === 'header'} onClick={() => setActivePanel('header')} />
             <ToolButton icon="T" label={isArabic ? 'نص' : 'Text'} active={activePanel === 'text'} onClick={() => setActivePanel('text')} />
@@ -689,6 +757,45 @@ export default function TemplateCustomizationEditor({
                 ))}
               </div>
               <p className="mt-3 text-xs text-gray-500">{isArabic ? 'أضف الملصق ثم اسحبه مباشرة فوق البطاقة.' : 'Add sticker then drag it directly on the card.'}</p>
+            </div>
+          )}
+
+          {activePanel === 'frames' && (
+            <div>
+              <h3 className="mb-3 text-xl font-semibold">{isArabic ? 'الإطارات' : 'Frames'}</h3>
+              <div className="grid grid-cols-2 gap-2 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {FRAME_OPTIONS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => addFrame(item.id, item.name, item.imageUrl)}
+                    className="rounded-lg border border-gray-300 bg-white p-2 hover:border-blue-500 hover:bg-blue-50"
+                    title={item.name}
+                  >
+                    <img src={item.imageUrl} alt={item.name} className="h-16 w-full object-contain" />
+                    <span className="text-xs mt-1 block text-center text-gray-600">{item.name}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-gray-500">{isArabic ? 'أضف إطارًا لمسة نهائية جذابة.' : 'Add a decorative frame overlay over the invite.'}</p>
+            </div>
+          )}
+
+          {activePanel === 'photos' && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">{isArabic ? 'الصور' : 'Photos'}</h3>
+              <label className="block cursor-pointer rounded-lg border-2 border-dashed border-blue-300 bg-white p-4 text-center hover:bg-blue-50">
+                <span className="text-sm font-semibold text-blue-700">{isArabic ? 'رفع صورة' : 'Upload photo'}</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) addPhoto(file)
+                  }}
+                />
+              </label>
+              <p className="text-xs text-gray-500">{isArabic ? 'يمكنك إضافة صور الزفاف أو صور الزوجين.' : 'Add a wedding photo or couple portrait directly on the card.'}</p>
             </div>
           )}
 

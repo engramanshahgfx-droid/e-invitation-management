@@ -1,10 +1,15 @@
 'use client'
 
 import ElegantInvitation from '@/components/invitations/ElegantInvitation'
+import GuestPaymentProofCard from '@/components/invitations/GuestPaymentProofCard'
 import MinimalInvitation from '@/components/invitations/MinimalInvitation'
 import ModernInvitation from '@/components/invitations/ModernInvitation'
 import PlayfulInvitation from '@/components/invitations/PlayfulInvitation'
 import ProfessionalInvitation from '@/components/invitations/ProfessionalInvitation'
+import RSVPButtons from '@/components/invitations/RSVPButtons'
+import MarketplaceWidget from '@/components/marketplace/MarketplaceWidget'
+import ShoppingCart from '@/components/marketplace/ShoppingCart'
+import { CartProvider } from '@/contexts/CartContext'
 import { InvitationData, TemplateStyle } from '@/types/invitations'
 import { useLocale } from 'next-intl'
 import dynamic from 'next/dynamic'
@@ -26,6 +31,13 @@ interface SharedInvitationResponse {
   template_id: TemplateStyle
   invitation_data: InvitationData
   qr_token?: string
+  event_id?: string
+  bank_details?: {
+    bank_account_holder?: string | null
+    bank_name?: string | null
+    bank_account_number?: string | null
+    bank_iban?: string | null
+  }
 }
 
 export default function SharedInvitationPage() {
@@ -36,6 +48,7 @@ export default function SharedInvitationPage() {
   const [data, setData] = useState<SharedInvitationResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   const guestId = useMemo(() => searchParams.get('guestId') || searchParams.get('guest_id'), [searchParams])
 
@@ -90,26 +103,77 @@ export default function SharedInvitationPage() {
   }
 
   const InvitationComponent = TEMPLATE_COMPONENTS[data.template_id]
+  
   return (
-    <div>
-      <InvitationComponent data={data.invitation_data} />
+    <CartProvider eventId={data.event_id || ''}>
+      <div className="bg-white">
+        {/* Invitation Template */}
+        <InvitationComponent data={data.invitation_data} />
 
-      {/* Personal QR code for event check-in */}
-      {data.qr_token && (
-        <div className="flex flex-col items-center gap-3 bg-white px-6 py-8 text-center">
-          <p className="text-sm font-medium text-gray-600">
-            {isArabic ? 'رمز QR الخاص بك للتسجيل في الحدث' : 'Your personal QR code for event check-in'}
-          </p>
-          <div className="rounded-xl border border-gray-200 p-3 shadow-sm">
-            <QRCodeSVG value={data.qr_token} size={180} level="M" includeMargin />
+        {/* RSVP Buttons */}
+        {data.event_id && guestId && (
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <RSVPButtons
+              guestId={guestId}
+              eventId={data.event_id}
+              onStatusChange={() => {
+                // Optionally refresh invitation data after RSVP
+              }}
+            />
           </div>
-          <p className="text-xs text-gray-400">
-            {isArabic
-              ? 'أرِ هذا الرمز عند الدخول إلى الحدث'
-              : 'Show this code at the event entrance'}
-          </p>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Direct bank transfer payment proof upload */}
+        {data.event_id && guestId && (
+          <div className="px-6 pb-8">
+            <GuestPaymentProofCard
+              eventId={data.event_id}
+              guestId={guestId}
+              shareLink={params.shareLink}
+              bankDetails={data.bank_details || {}}
+            />
+          </div>
+        )}
+
+        {/* Personal QR code for event check-in */}
+        {data.qr_token && (
+          <div className="flex flex-col items-center gap-3 bg-white px-6 py-8 text-center">
+            <p className="text-sm font-medium text-gray-600">
+              {isArabic ? 'رمز QR الخاص بك للتسجيل في الحدث' : 'Your personal QR code for event check-in'}
+            </p>
+            <div className="rounded-xl border border-gray-200 p-3 shadow-sm">
+              <QRCodeSVG value={data.qr_token} size={180} level="M" includeMargin />
+            </div>
+            <p className="text-xs text-gray-400">
+              {isArabic
+                ? 'أرِ هذا الرمز عند الدخول إلى الحدث'
+                : 'Show this code at the event entrance'}
+            </p>
+          </div>
+        )}
+
+        {/* Optional Services Marketplace Widget */}
+        {data.event_id && (
+          <div className="bg-gray-50 px-6 py-8 md:py-12">
+            <div className="max-w-4xl mx-auto">
+              <MarketplaceWidget 
+                eventId={data.event_id}
+                onCartOpen={() => setIsCartOpen(true)}
+                maxItems={4}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Shopping Cart Sidebar */}
+        {data.event_id && (
+          <ShoppingCart 
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            eventId={data.event_id}
+          />
+        )}
+      </div>
+    </CartProvider>
   )
 }

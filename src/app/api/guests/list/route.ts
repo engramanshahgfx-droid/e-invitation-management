@@ -95,20 +95,41 @@ export async function GET(request: NextRequest) {
     if (guestIds.length > 0) {
       const { data: messages } = await supabase
         .from('messages')
-        .select('id, guest_id, status, sent_at, error_message')
+        .select('id, guest_id, message_type, status, sent_at, error_message')
         .in('guest_id', guestIds)
         .order('created_at', { ascending: false })
 
-      // Group by guest_id and take the latest status
+      // Prefer primary invitation status so follow-up failures do not mask successful template delivery.
       if (messages) {
+        const fallbackStatuses: Record<
+          string,
+          { messageId?: string; deliveryStatus: string; sentAt: string | null; errorMessage?: string | null }
+        > = {}
+
         messages.forEach((msg: any) => {
-          if (!messageStatuses[msg.guest_id]) {
+          const messageType = String(msg.message_type || '').toLowerCase()
+          const statusPayload = {
+            messageId: msg.id,
+            deliveryStatus: msg.status,
+            sentAt: msg.sent_at,
+            errorMessage: msg.error_message,
+          }
+
+          if (messageType === 'invitation' && !messageStatuses[msg.guest_id]) {
             messageStatuses[msg.guest_id] = {
-              messageId: msg.id,
-              deliveryStatus: msg.status,
-              sentAt: msg.sent_at,
-              errorMessage: msg.error_message,
+              ...statusPayload,
             }
+            return
+          }
+
+          if (!fallbackStatuses[msg.guest_id]) {
+            fallbackStatuses[msg.guest_id] = statusPayload
+          }
+        })
+
+        Object.entries(fallbackStatuses).forEach(([guestId, statusPayload]) => {
+          if (!messageStatuses[guestId]) {
+            messageStatuses[guestId] = statusPayload
           }
         })
       }

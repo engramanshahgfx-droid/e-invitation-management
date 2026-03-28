@@ -34,6 +34,7 @@ const QRScannerViewport = ({ onScanSuccess, isActive, exampleCode }: QRScannerVi
   const [lastScanResult, setLastScanResult] = useState<ScanResult | null>(null)
   const [showManualInput, setShowManualInput] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const lastDetectedAtRef = useRef(0)
   const isMountedRef = useRef(true)
@@ -51,6 +52,7 @@ const QRScannerViewport = ({ onScanSuccess, isActive, exampleCode }: QRScannerVi
 
     const startCamera = async () => {
       try {
+        setCameraError(null)
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
         })
@@ -58,8 +60,20 @@ const QRScannerViewport = ({ onScanSuccess, isActive, exampleCode }: QRScannerVi
           videoRef.current.srcObject = stream
           setIsCameraActive(true)
         }
-      } catch (error) {
-        console.error('Camera access denied:', error)
+      } catch (error: unknown) {
+        const isPermissionDismissed =
+          error instanceof DOMException &&
+          (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError')
+
+        if (!isPermissionDismissed) {
+          console.warn('Camera initialization failed:', error)
+        }
+
+        setCameraError(
+          isArabic
+            ? 'تعذر الوصول إلى الكاميرا. يمكنك المتابعة عبر الإدخال اليدوي.'
+            : 'Unable to access camera. You can continue with manual entry.'
+        )
         setShowManualInput(true)
       }
     }
@@ -262,6 +276,12 @@ const QRScannerViewport = ({ onScanSuccess, isActive, exampleCode }: QRScannerVi
             </div>
           )}
         </div>
+
+        {cameraError && (
+          <div className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+            {cameraError}
+          </div>
+        )}
 
         {showManualInput && (
           <div className="mt-4 animate-slide-up rounded-lg bg-muted p-4">

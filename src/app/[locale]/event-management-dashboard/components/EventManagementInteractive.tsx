@@ -11,7 +11,6 @@ import CreateEventModal from './CreateEventModal'
 import EventSummaryCards from './EventSummaryCards'
 import EventTableMobileCard from './EventTableMobileCard'
 import EventTableRow from './EventTableRow'
-import InvitationsManager from './InvitationsManager'
 import TemplateEditorModal from './TemplateEditorModal'
 
 interface Event {
@@ -22,6 +21,10 @@ interface Event {
   description?: string
   event_type?: string
   expected_guests?: number
+  bank_account_holder?: string
+  bank_name?: string
+  bank_account_number?: string
+  bank_iban?: string
   status: 'upcoming' | 'ongoing' | 'completed' | 'draft'
   template_id?: TemplateStyle
   guestCount?: number
@@ -30,6 +33,47 @@ interface Event {
   declined?: number
   noResponse?: number
   checkedIn?: number
+  openCount?: number
+  openRate?: number
+}
+
+interface DashboardOverview {
+  metrics: {
+    totalEvents: number
+    totalGuests: number
+    confirmedGuests: number
+    declinedGuests: number
+    pendingGuests: number
+    checkedInGuests: number
+    totalInvitationOpens: number
+    uniqueGuestsOpened: number
+    guestOpenRate: number
+  }
+  eventPerformance: Array<{
+    eventId: string
+    eventName: string
+    date: string
+    venue: string
+    status: string
+    invitationsSent: number
+    confirmed: number
+    declined: number
+    pending: number
+    checkedIn: number
+    openCount: number
+    uniqueGuestOpens: number
+    openRate: number
+    attendanceRate: number
+  }>
+  recentGuestOpens: Array<{
+    guestId: string
+    guestName: string
+    email: string | null
+    phone: string | null
+    eventId: string
+    eventName: string
+    viewedAt: string
+  }>
 }
 
 interface EventFormData {
@@ -40,6 +84,10 @@ interface EventFormData {
   description: string
   expectedGuests: number
   eventType: string
+  bankAccountHolder: string
+  bankName: string
+  bankAccountNumber: string
+  bankIban: string
 }
 
 interface TemplateData {
@@ -56,6 +104,50 @@ interface TemplateData {
   }
   footerText: string
   footerTextAr?: string
+}
+
+const getEventSignature = (event: Partial<Event>) => {
+  const normalizedName = (event.name || '').trim().toLowerCase()
+  const normalizedDate = (event.date || '').trim()
+  const normalizedVenue = (event.venue || '').trim().toLowerCase()
+  return `${normalizedName}|${normalizedDate}|${normalizedVenue}`
+}
+
+const getEventActivityScore = (event: Partial<Event>) => {
+  return (
+    (event.invitationsSent || 0) +
+    (event.guestCount || 0) +
+    (event.confirmed || 0) +
+    (event.checkedIn || 0) +
+    (event.openCount || 0)
+  )
+}
+
+const dedupeEventsBySignature = (items: Event[]): Event[] => {
+  const bySignature = new Map<string, Event>()
+
+  for (const item of items) {
+    const signature = getEventSignature(item)
+    if (!signature || signature === '||') {
+      bySignature.set(String(item.id), item)
+      continue
+    }
+
+    const existing = bySignature.get(signature)
+    if (!existing) {
+      bySignature.set(signature, item)
+      continue
+    }
+
+    // Keep the richer record when duplicate events have the same name/date/venue.
+    const existingScore = getEventActivityScore(existing)
+    const incomingScore = getEventActivityScore(item)
+    if (incomingScore > existingScore) {
+      bySignature.set(signature, item)
+    }
+  }
+
+  return Array.from(bySignature.values())
 }
 
 // Helper function to determine event status based on date
@@ -94,11 +186,10 @@ const EventManagementInteractive = () => {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventFormData | null>(null)
   const [templateEventId, setTemplateEventId] = useState<string | null>(null)
-  const [isInvitationsModalOpen, setIsInvitationsModalOpen] = useState(false)
-  const [invitationsEventId, setInvitationsEventId] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeFeature, setUpgradeFeature] = useState('additional events')
   const [pendingPayment, setPendingPayment] = useState(false)
+  const [dashboardOverview, setDashboardOverview] = useState<DashboardOverview | null>(null)
 
   const handleAutoApprovePendingPayment = async () => {
     if (!token) return
@@ -162,11 +253,12 @@ const EventManagementInteractive = () => {
   useEffect(() => {
     const initializeComponent = async () => {
       const timeout = setTimeout(() => {
-        console.error('Initialization timeout - taking too long')
-        setError('Loading is taking too long. Please refresh the page.')
+        // Avoid dev error overlay for slow networks; show a normal recoverable warning.
+        console.warn('Initialization is taking longer than expected')
+        setError('Loading is taking longer than expected. Please wait a bit or refresh once.')
         setIsHydrated(true)
         setIsLoading(false)
-      }, 10000) // 10 second timeout
+      }, 30000)
 
       try {
         console.log('Starting component initialization...')
@@ -261,16 +353,27 @@ const EventManagementInteractive = () => {
         ...e,
         id: typeof e.id === 'string' ? e.id : String(e.id),
         status: getEventStatus(e.date), // Recalculate status based on event date
-        guestCount: e.expected_guests ?? 0,
-        invitationsSent: 0,
-        confirmed: 0,
-        declined: 0,
-        noResponse: 0,
-        checkedIn: 0,
+        guestCount: e.guestCount ?? e.expected_guests ?? 0,
+        invitationsSent: e.invitationsSent ?? 0,
+        confirmed: e.confirmed ?? 0,
+        declined: e.declined ?? 0,
+        noResponse: e.noResponse ?? 0,
+        checkedIn: e.checkedIn ?? 0,
+        openCount: e.openCount ?? 0,
+        openRate: e.openRate ?? 0,
       }))
 
-      console.log('Transformed events:', transformedEvents)
-      setEvents(transformedEvents)
+      const dedupedEvents = dedupeEventsBySignature(transformedEvents)
+      if (transformedEvents.length !== dedupedEvents.length) {
+        console.warn('Collapsed duplicate events in dashboard list', {
+          originalCount: transformedEvents.length,
+          dedupedCount: dedupedEvents.length,
+        })
+      }
+
+      console.log('Transformed events:', dedupedEvents)
+      setEvents(dedupedEvents)
+      await fetchDashboardOverview(accessToken)
       setError(null)
       setIsHydrated(true)
     } catch (err) {
@@ -280,6 +383,68 @@ const EventManagementInteractive = () => {
       setIsHydrated(true)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchDashboardOverview = async (accessToken: string) => {
+    try {
+      const response = await fetch('/api/reports/dashboard/overview', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard overview')
+      }
+
+      const data = await response.json()
+      const dedupedPerformance = Array.isArray(data?.eventPerformance)
+        ? dedupeEventsBySignature(
+            data.eventPerformance.map((eventSummary: any) => ({
+              id: String(eventSummary.eventId),
+              name: eventSummary.eventName,
+              date: eventSummary.date,
+              venue: eventSummary.venue,
+              status: eventSummary.status,
+              guestCount: eventSummary.invitationsSent,
+              invitationsSent: eventSummary.invitationsSent,
+              confirmed: eventSummary.confirmed,
+              declined: eventSummary.declined,
+              noResponse: eventSummary.pending,
+              checkedIn: eventSummary.checkedIn,
+              openCount: eventSummary.openCount,
+              openRate: eventSummary.openRate,
+            }))
+          ).map((event) => ({
+            eventId: event.id,
+            eventName: event.name,
+            date: event.date,
+            venue: event.venue,
+            status: event.status,
+            invitationsSent: event.invitationsSent || 0,
+            confirmed: event.confirmed || 0,
+            declined: event.declined || 0,
+            pending: event.noResponse || 0,
+            checkedIn: event.checkedIn || 0,
+            openCount: event.openCount || 0,
+            uniqueGuestOpens: 0,
+            openRate: event.openRate || 0,
+            attendanceRate:
+              (event.confirmed || 0) > 0
+                ? Math.round(((event.checkedIn || 0) / Math.max(event.confirmed || 0, 1)) * 100)
+                : 0,
+          }))
+        : []
+
+      setDashboardOverview({
+        ...data,
+        eventPerformance: dedupedPerformance,
+      })
+    } catch (overviewError) {
+      console.error('Error fetching dashboard overview:', overviewError)
+      setDashboardOverview(null)
     }
   }
 
@@ -373,6 +538,10 @@ const EventManagementInteractive = () => {
             description: eventData.description,
             eventType: eventData.eventType,
             expectedGuests: eventData.expectedGuests,
+            bankAccountHolder: eventData.bankAccountHolder,
+            bankName: eventData.bankName,
+            bankAccountNumber: eventData.bankAccountNumber,
+            bankIban: eventData.bankIban,
           }),
         })
 
@@ -395,6 +564,11 @@ const EventManagementInteractive = () => {
                   description: updatedEvent.description,
                   event_type: updatedEvent.event_type,
                   template_id: updatedEvent.template_id,
+                  expected_guests: updatedEvent.expected_guests,
+                  bank_account_holder: updatedEvent.bank_account_holder,
+                  bank_name: updatedEvent.bank_name,
+                  bank_account_number: updatedEvent.bank_account_number,
+                  bank_iban: updatedEvent.bank_iban,
                   status: getEventStatus(updatedEvent.date),
                   guestCount: updatedEvent.expected_guests,
                 }
@@ -419,6 +593,10 @@ const EventManagementInteractive = () => {
             eventType: eventData.eventType,
             expectedGuests: eventData.expectedGuests,
             status: eventStatus,
+            bankAccountHolder: eventData.bankAccountHolder,
+            bankName: eventData.bankName,
+            bankAccountNumber: eventData.bankAccountNumber,
+            bankIban: eventData.bankIban,
           }),
         })
 
@@ -438,9 +616,8 @@ const EventManagementInteractive = () => {
 
         const templateCategory = normalizeTemplateCategory(newEvent.event_type || eventData.eventType)
 
-        setEvents((prev) => [
-          ...prev,
-          {
+        setEvents((prev) => {
+          const mappedEvent: Event = {
             ...newEvent,
             id: String(newEvent.id),
             template_id: newEvent.template_id || 'modern',
@@ -451,8 +628,13 @@ const EventManagementInteractive = () => {
             declined: 0,
             noResponse: 0,
             checkedIn: 0,
-          },
-        ])
+          }
+          const existingIndex = prev.findIndex((e) => e.id === mappedEvent.id)
+          if (existingIndex >= 0) {
+            return prev.map((e, idx) => (idx === existingIndex ? mappedEvent : e))
+          }
+          return [...prev, mappedEvent]
+        })
 
         router.push(`/${locale}/invitations/templates/${templateCategory}?eventId=${newEvent.id}`)
         return
@@ -477,6 +659,10 @@ const EventManagementInteractive = () => {
       description: event.description || '',
       expectedGuests: event.expected_guests || event.guestCount || 0,
       eventType: event.event_type || 'wedding',
+      bankAccountHolder: (event as any).bank_account_holder || '',
+      bankName: (event as any).bank_name || '',
+      bankAccountNumber: (event as any).bank_account_number || '',
+      bankIban: (event as any).bank_iban || '',
     })
     setIsCreateModalOpen(true)
   }
@@ -505,6 +691,10 @@ const EventManagementInteractive = () => {
           eventType: event.event_type || 'wedding',
           expectedGuests: event.expected_guests || event.guestCount || 100,
           status: eventStatus,
+          bankAccountHolder: (event as any).bank_account_holder || '',
+          bankName: (event as any).bank_name || '',
+          bankAccountNumber: (event as any).bank_account_number || '',
+          bankIban: (event as any).bank_iban || '',
         }),
       })
 
@@ -520,20 +710,24 @@ const EventManagementInteractive = () => {
       }
 
       const newEvent = await response.json()
-      setEvents((prev) => [
-        ...prev,
-        {
+      setEvents((prev) => {
+        const mappedEvent: Event = {
           ...newEvent,
           id: String(newEvent.id),
-          status: getEventStatus(newEvent.date), // Recalculate status based on date
+          status: getEventStatus(newEvent.date),
           guestCount: newEvent.expected_guests,
           invitationsSent: 0,
           confirmed: 0,
           declined: 0,
           noResponse: 0,
           checkedIn: 0,
-        },
-      ])
+        }
+        const existingIndex = prev.findIndex((e) => e.id === mappedEvent.id)
+        if (existingIndex >= 0) {
+          return prev.map((e, idx) => (idx === existingIndex ? mappedEvent : e))
+        }
+        return [...prev, mappedEvent]
+      })
 
       setError(null)
     } catch (err) {
@@ -588,12 +782,7 @@ const EventManagementInteractive = () => {
   }
 
   const handleManageInvitations = (event: Event) => {
-    if (!event.template_id) {
-      setError(isArabic ? 'الفعالية لا تملك قالب دعوة محدد' : 'Event does not have a template selected')
-      return
-    }
-    setInvitationsEventId(event.id)
-    setIsInvitationsModalOpen(true)
+    router.push(`/${locale}/event-management-dashboard/payments?eventId=${encodeURIComponent(event.id)}`)
   }
 
   const handleSelectTemplate = (event: Event) => {
@@ -643,6 +832,10 @@ const EventManagementInteractive = () => {
       return 0
     })
 
+  const totalInvitationsSent = events.reduce((sum, e) => sum + (e.invitationsSent || 0), 0)
+  const totalOpenCount = events.reduce((sum, e) => sum + (e.openCount || 0), 0)
+  const globalOpenRate = totalInvitationsSent > 0 ? Math.round((totalOpenCount / totalInvitationsSent) * 100) : 0
+
   const summaryCards = [
     {
       label: 'Total Events',
@@ -650,7 +843,6 @@ const EventManagementInteractive = () => {
       value: events.length,
       icon: 'CalendarDaysIcon',
       color: 'primary' as const,
-      trend: { value: 12, isPositive: true },
     },
     {
       label: 'Upcoming Events',
@@ -665,17 +857,18 @@ const EventManagementInteractive = () => {
       value: events.reduce((sum, e) => sum + (e.guestCount || e.expected_guests || 0), 0),
       icon: 'UserGroupIcon',
       color: 'accent' as const,
-      trend: { value: 8, isPositive: true },
     },
     {
-      label: 'Avg Attendance',
-      labelAr: 'متوسط الحضور',
-      value: Math.round(
-        events.reduce((sum, e) => {
-          const rate = (e.invitationsSent || 0) > 0 ? ((e.checkedIn || 0) / (e.invitationsSent || 1)) * 100 : 0
-          return sum + rate
-        }, 0) / (events.length || 1)
-      ),
+      label: 'Invitation Opens',
+      labelAr: 'إجمالي فتح الدعوات',
+      value: totalOpenCount,
+      icon: 'EyeIcon',
+      color: 'success' as const,
+    },
+    {
+      label: 'Open Rate',
+      labelAr: 'معدل فتح الدعوات',
+      value: globalOpenRate,
       icon: 'ChartBarIcon',
       color: 'warning' as const,
     },
@@ -700,6 +893,110 @@ const EventManagementInteractive = () => {
       )}
 
       <EventSummaryCards cards={summaryCards} />
+
+      {dashboardOverview && (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-warm-md">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="font-heading text-xl font-semibold text-text-primary">
+                  {isArabic ? 'تحليلات فتح الدعوات' : 'Invitation Open Analytics'}
+                </h2>
+                <p className="text-sm text-text-secondary">
+                  {isArabic
+                    ? 'فتح الدعوات على مستوى الضيف مع آخر النشاطات'
+                    : 'Guest-level invitation opens with latest activity'}
+                </p>
+              </div>
+              <div className="rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+                {dashboardOverview.metrics.uniqueGuestsOpened}/{dashboardOverview.metrics.totalGuests}{' '}
+                {isArabic ? 'ضيف فتح الدعوة' : 'guests opened'}
+              </div>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-4">
+              <div className="rounded-md bg-muted p-4">
+                <p className="text-xs text-text-secondary">{isArabic ? 'إجمالي الفتح' : 'Total Opens'}</p>
+                <p className="font-mono text-2xl font-bold text-text-primary">
+                  {dashboardOverview.metrics.totalInvitationOpens}
+                </p>
+              </div>
+              <div className="rounded-md bg-muted p-4">
+                <p className="text-xs text-text-secondary">{isArabic ? 'معدل فتح الضيوف' : 'Guest Open Rate'}</p>
+                <p className="font-mono text-2xl font-bold text-text-primary">
+                  {dashboardOverview.metrics.guestOpenRate}%
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {dashboardOverview.recentGuestOpens.length === 0 ? (
+                <p className="text-sm text-text-secondary">
+                  {isArabic ? 'لا توجد عمليات فتح دعوات مسجلة بعد.' : 'No invitation opens recorded yet.'}
+                </p>
+              ) : (
+                dashboardOverview.recentGuestOpens.map((open) => (
+                  <div key={`${open.guestId}-${open.viewedAt}`} className="rounded-md border border-border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-text-primary">{open.guestName}</p>
+                        <p className="text-sm text-text-secondary">{open.eventName}</p>
+                        <p className="text-xs text-text-secondary">{open.email || open.phone || ''}</p>
+                      </div>
+                      <span className="text-xs text-text-secondary">
+                        {new Date(open.viewedAt).toLocaleString(isArabic ? 'ar-SA' : 'en-US')}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-6 shadow-warm-md">
+            <div className="mb-4">
+              <h2 className="font-heading text-xl font-semibold text-text-primary">
+                {isArabic ? 'أداء الفعاليات' : 'Event Performance'}
+              </h2>
+              <p className="text-sm text-text-secondary">
+                {isArabic
+                  ? 'مقارنة الفعاليات حسب الفتح والردود والحضور'
+                  : 'Compare events by opens, responses, and attendance'}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {dashboardOverview.eventPerformance.slice(0, 6).map((eventSummary) => (
+                <div key={eventSummary.eventId} className="rounded-md border border-border p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-text-primary">{eventSummary.eventName}</p>
+                      <p className="text-xs text-text-secondary">{eventSummary.date}</p>
+                    </div>
+                    <span className="text-xs text-text-secondary">{eventSummary.venue}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded bg-muted p-2">
+                      <p className="text-xs text-text-secondary">{isArabic ? 'الفتح' : 'Opens'}</p>
+                      <p className="font-mono text-sm font-bold text-text-primary">{eventSummary.openRate}%</p>
+                    </div>
+                    <div className="rounded bg-muted p-2">
+                      <p className="text-xs text-text-secondary">{isArabic ? 'التأكيد' : 'RSVP'}</p>
+                      <p className="font-mono text-sm font-bold text-text-primary">
+                        {eventSummary.confirmed}/{eventSummary.invitationsSent}
+                      </p>
+                    </div>
+                    <div className="rounded bg-muted p-2">
+                      <p className="text-xs text-text-secondary">{isArabic ? 'الحضور' : 'Attendance'}</p>
+                      <p className="font-mono text-sm font-bold text-text-primary">{eventSummary.attendanceRate}%</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-card shadow-warm-md">
         <div className="border-b border-border p-6">
@@ -851,6 +1148,7 @@ const EventManagementInteractive = () => {
               isSelected={selectedEvents.includes(event.id)}
               onSelect={() => handleSelectEvent(event.id)}
               onEdit={() => handleEditEvent(event)}
+              onManageInvitations={() => handleManageInvitations(event)}
               onSelectTemplate={() => handleSelectTemplate(event)}
               onDuplicate={() => handleDuplicateEvent(event)}
               onViewAnalytics={() => handleViewAnalytics(event)}
@@ -897,20 +1195,6 @@ const EventManagementInteractive = () => {
             : undefined
         }
       />
-
-      {isInvitationsModalOpen && invitationsEventId && (
-        <InvitationsManager
-          isOpen={isInvitationsModalOpen}
-          eventId={invitationsEventId}
-          templateId={events.find((e) => e.id === invitationsEventId)?.template_id || 'modern'}
-          eventName={events.find((e) => e.id === invitationsEventId)?.name || ''}
-          token={token!}
-          onClose={() => {
-            setIsInvitationsModalOpen(false)
-            setInvitationsEventId(null)
-          }}
-        />
-      )}
 
       {showUpgradeModal && (
         <UpgradeModal

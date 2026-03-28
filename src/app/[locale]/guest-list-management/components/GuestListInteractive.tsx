@@ -1,9 +1,10 @@
 'use client'
 
+import { WhatsAppSandboxHelper } from '@/components/WhatsAppSandboxHelper'
 import Icon from '@/components/ui/AppIcon'
 import { getCurrentSession, getCurrentUser } from '@/lib/auth'
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AddGuestForm from './AddGuestForm'
 import BulkActionsBar from './BulkActionsBar'
 import FileUploadZone from './FileUploadZone'
@@ -53,6 +54,14 @@ interface WhatsAppResultItem {
   errorMessage?: string | null
 }
 
+interface WhatsAppMediaAttachmentItem {
+  phone: string
+  attempted: boolean
+  reason?: string | null
+  mode?: string | null
+  mediaUrl?: string | null
+}
+
 interface WhatsAppSendReport {
   senderMode?: 'sandbox' | 'registered'
   sender?: string
@@ -62,6 +71,7 @@ interface WhatsAppSendReport {
   failed?: number
   hint?: string
   results?: WhatsAppResultItem[]
+  mediaAttachmentAttempts?: WhatsAppMediaAttachmentItem[]
 }
 
 const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) => {
@@ -96,78 +106,124 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
   const [guestToUpdate, setGuestToUpdate] = useState<Guest | null>(null)
   const [whatsAppReport, setWhatsAppReport] = useState<WhatsAppSendReport | null>(null)
 
-  // Fetch guests for the selected event
-  const fetchGuests = async (eventId: string) => {
-    if (!eventId || !token) return
+  const getAuthContext = useCallback(async () => {
+    const [user, session] = await Promise.all([
+      getCurrentUser().catch(() => null),
+      getCurrentSession().catch(() => null),
+    ])
 
-    setIsLoadingGuests(true)
-    try {
-      const response = await fetch(`/api/guests/list?eventId=${eventId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
+    const nextUserId = user?.id || null
+    const nextToken = session?.access_token || null
 
-      if (response.ok) {
-        const data = await response.json()
-        const fetchedGuests = data.guests || []
-
-        // Map to the Guest interface with default avatar
-        const mappedGuests: Guest[] = fetchedGuests.map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          phone: g.phone,
-          email: g.email,
-          invitationStatus: g.invitationStatus,
-          deliveryStatus: g.deliveryStatus,
-          responseStatus: g.responseStatus,
-          checkInTime: g.checkInTime,
-          qrCode: g.qrCode,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=4F46E5&color=fff&size=128`,
-          avatarAlt: `Avatar for ${g.name}`,
-          plusOnes: g.plusOnes || 0,
-        }))
-
-        setGuests(mappedGuests)
-        setFilteredGuests(mappedGuests)
-      } else {
-        console.error('Failed to fetch guests')
-      }
-    } catch (error) {
-      console.error('Error fetching guests:', error)
-    } finally {
-      setIsLoadingGuests(false)
+    if (nextUserId && nextUserId !== userId) {
+      setUserId(nextUserId)
     }
-  }
+
+    if (nextToken && nextToken !== token) {
+      setToken(nextToken)
+    }
+
+    return {
+      userId: nextUserId,
+      token: nextToken,
+    }
+  }, [token, userId])
+
+  const sendAuthorizedRequest = useCallback(
+    async (input: string, init: RequestInit = {}) => {
+      const execute = async (authToken: string) => {
+        const headers = new Headers(init.headers)
+        headers.set('Authorization', `Bearer ${authToken}`)
+
+        return fetch(input, {
+          ...init,
+          headers,
+        })
+      }
+
+      const initialAuth = await getAuthContext()
+      if (!initialAuth.token) {
+        throw new Error(
+          isArabic ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.' : 'Your session expired. Please sign in again.'
+        )
+      }
+
+      let response = await execute(initialAuth.token)
+
+      if (response.status === 401) {
+        const refreshedAuth = await getAuthContext()
+        if (refreshedAuth.token && refreshedAuth.token !== initialAuth.token) {
+          response = await execute(refreshedAuth.token)
+        }
+      }
+
+      return response
+    },
+    [getAuthContext, isArabic]
+  )
+
+  // Fetch guests for the selected event
+  const fetchGuests = useCallback(
+    async (eventId: string) => {
+      if (!eventId) return
+
+      setIsLoadingGuests(true)
+      try {
+        const response = await sendAuthorizedRequest(`/api/guests/list?eventId=${eventId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const fetchedGuests = data.guests || []
+
+          // Map to the Guest interface with default avatar
+          const mappedGuests: Guest[] = fetchedGuests.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            phone: g.phone,
+            email: g.email,
+            invitationStatus: g.invitationStatus,
+            deliveryStatus: g.deliveryStatus,
+            responseStatus: g.responseStatus,
+            checkInTime: g.checkInTime,
+            qrCode: g.qrCode,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(g.name)}&background=4F46E5&color=fff&size=128`,
+            avatarAlt: `Avatar for ${g.name}`,
+            plusOnes: g.plusOnes || 0,
+          }))
+
+          setGuests(mappedGuests)
+          setFilteredGuests(mappedGuests)
+        } else {
+          console.error('Failed to fetch guests')
+        }
+      } catch (error) {
+        console.error('Error fetching guests:', error)
+      } finally {
+        setIsLoadingGuests(false)
+      }
+    },
+    [sendAuthorizedRequest]
+  )
 
   // Fetch events on mount
   useEffect(() => {
     const initializeComponent = async () => {
       try {
-        const user = await getCurrentUser()
-        if (!user?.id) {
+        const auth = await getAuthContext()
+        if (!auth.userId || !auth.token) {
           setUploadError('User not authenticated')
           setIsHydrated(true)
           return
         }
 
-        setUserId(user.id)
-
-        const session = await getCurrentSession()
-        if (!session?.access_token) {
-          setUploadError('No session token found')
-          setIsHydrated(true)
-          return
-        }
-
-        setToken(session.access_token)
-
         // Fetch user's events
         setIsLoadingEvents(true)
-        const response = await fetch('/api/events/list', {
+        const response = await sendAuthorizedRequest('/api/events/list', {
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
         })
@@ -191,11 +247,11 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
     }
 
     initializeComponent()
-  }, [])
+  }, [getAuthContext, sendAuthorizedRequest])
 
   // Fetch guests when event is selected
   useEffect(() => {
-    if (selectedEventId && token) {
+    if (selectedEventId) {
       fetchGuests(selectedEventId)
       // Notify parent component of selected event change
       if (onEventSelected) {
@@ -208,7 +264,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         onEventSelected('')
       }
     }
-  }, [selectedEventId, token, onEventSelected])
+  }, [fetchGuests, onEventSelected, selectedEventId])
 
   useEffect(() => {
     if (!isHydrated) return
@@ -293,17 +349,9 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       return
     }
 
-    if (!token) {
-      setUploadError('User not authenticated')
-      return
-    }
-
     try {
-      const response = await fetch(`/api/guests/delete?guestId=${id}`, {
+      const response = await sendAuthorizedRequest(`/api/guests/delete?guestId=${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
 
       const data = await response.json()
@@ -325,9 +373,23 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
   }
 
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false)
+  const [isSendingReminders, setIsSendingReminders] = useState(false)
+
+  const isSandboxJoinError = (message?: string | null) => {
+    const value = String(message || '').toLowerCase()
+    return value.includes('not joined to twilio whatsapp sandbox') || value.includes('failed to join sandbox')
+  }
+
+  const sandboxJoinRequired = Boolean(
+    whatsAppReport?.senderMode === 'sandbox' &&
+    (whatsAppReport?.results || []).some((result) => isSandboxJoinError(result.errorMessage))
+  )
+
+  const sandboxFailedRecipient =
+    (whatsAppReport?.results || []).find((result) => isSandboxJoinError(result.errorMessage))?.phone || undefined
 
   const handleBulkSendWhatsApp = async () => {
-    if (!userId || !selectedEventId || selectedGuests.length === 0) {
+    if (!selectedEventId || selectedGuests.length === 0) {
       setUploadError(isArabic ? 'يرجى تحديد فعالية وضيوف أولاً' : 'Please select an event and guests first')
       return
     }
@@ -338,23 +400,35 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
     setWhatsAppReport(null)
 
     try {
-      const response = await fetch('/api/whatsapp/send-invitations', {
+      const auth = await getAuthContext()
+      if (!auth.userId) {
+        throw new Error(
+          isArabic ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.' : 'Your session expired. Please sign in again.'
+        )
+      }
+
+      const response = await sendAuthorizedRequest('/api/whatsapp/send-invitations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId,
+          userId: auth.userId,
           eventId: selectedEventId,
           guestIds: selectedGuests,
         }),
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Failed to send WhatsApp messages')
+        throw new Error(
+          data.message ||
+            data.error ||
+            (isArabic
+              ? `فشل إرسال رسائل واتساب (رمز الحالة ${response.status})`
+              : `Failed to send WhatsApp messages (status ${response.status})`)
+        )
       }
 
       if (!data.sent || data.sent === 0) {
@@ -370,6 +444,7 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         failed: data.failed,
         hint: data.hint,
         results: data.results,
+        mediaAttachmentAttempts: data.mediaAttachmentAttempts,
       })
 
       setUploadSuccess(
@@ -399,8 +474,76 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
     console.log('Updating status for selected guests:', selectedGuests)
   }
 
+  const handleSendReminders = async () => {
+    if (!selectedEventId) {
+      setUploadError(isArabic ? 'يرجى اختيار فعالية أولاً' : 'Please select an event first')
+      return
+    }
+
+    setIsSendingReminders(true)
+    setUploadError(null)
+    setUploadSuccess(null)
+
+    try {
+      const response = await sendAuthorizedRequest('/api/reminders/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ eventId: selectedEventId }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send reminders')
+      }
+
+      setUploadSuccess(
+        isArabic
+          ? `تمت معالجة تذكيرات ${data.pendingGuests || 0} ضيف: تم الإرسال ${data.sent || 0}، فشل ${data.failed || 0}`
+          : `Processed reminders for ${data.pendingGuests || 0} guest(s): ${data.sent || 0} sent, ${data.failed || 0} failed`
+      )
+    } catch (err) {
+      setUploadError(
+        isArabic
+          ? `فشل إرسال التذكيرات: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`
+          : `Failed to send reminders: ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
+    } finally {
+      setIsSendingReminders(false)
+    }
+  }
+
   const handleBulkExportExcel = () => {
-    console.log('Exporting selected guests to Excel:', selectedGuests)
+    const guestsToExport = filteredGuests.filter((guest) => selectedGuests.includes(guest.id))
+    if (guestsToExport.length === 0) {
+      setUploadError(isArabic ? 'لا يوجد ضيوف محددون للتصدير' : 'No selected guests to export')
+      return
+    }
+
+    const rows = [
+      ['Name', 'Phone', 'Email', 'Delivery Status', 'Response Status', 'Check-in Time', 'Plus Ones'],
+      ...guestsToExport.map((guest) => [
+        guest.name,
+        guest.phone,
+        guest.email,
+        guest.deliveryStatus,
+        guest.responseStatus,
+        guest.checkInTime || '',
+        String(guest.plusOnes || 0),
+      ]),
+    ]
+
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'selected-guests.csv'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
   }
 
   const handleBulkGenerateQRCodes = () => {
@@ -414,11 +557,6 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
   const handleFileUpload = async (file: File, replace: boolean = false) => {
     if (!selectedEventId) {
       setUploadError('Please select an event first')
-      return
-    }
-
-    if (!token) {
-      setUploadError('User not authenticated')
       return
     }
 
@@ -437,11 +575,8 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         ? `/api/guests/upload?eventId=${selectedEventId}&replace=true`
         : `/api/guests/upload?eventId=${selectedEventId}`
 
-      const response = await fetch(url, {
+      const response = await sendAuthorizedRequest(url, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       })
 
@@ -492,11 +627,6 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       return
     }
 
-    if (!token) {
-      setUploadError('User not authenticated')
-      return
-    }
-
     if (
       !confirm(
         isArabic
@@ -512,11 +642,8 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
       setUploadError(null)
       setUploadSuccess(null)
 
-      const response = await fetch(`/api/guests/delete-all?eventId=${selectedEventId}`, {
+      const response = await sendAuthorizedRequest(`/api/guests/delete-all?eventId=${selectedEventId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
 
       const data = await response.json()
@@ -611,6 +738,27 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
               {isArabic ? 'جارٍ تحميل الفعاليات...' : 'Loading events...'}
             </p>
           )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={handleSendReminders}
+              disabled={!selectedEventId || isSendingReminders}
+              className="hover:bg-warning/90 inline-flex items-center gap-2 rounded-lg bg-warning px-4 py-2 text-sm font-medium text-warning-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSendingReminders ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-warning-foreground border-t-transparent" />
+              ) : (
+                <Icon name="BellAlertIcon" className="h-4 w-4" aria-label="Reminders" />
+              )}
+              {isSendingReminders
+                ? isArabic
+                  ? 'جارٍ إرسال التذكيرات...'
+                  : 'Sending reminders...'
+                : isArabic
+                  ? 'إرسال تذكيرات لغير المستجيبين'
+                  : 'Send Reminders to Pending RSVPs'}
+            </button>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -656,42 +804,63 @@ const GuestListInteractive = ({ onEventSelected }: GuestListInteractiveProps) =>
         )}
 
         {whatsAppReport && (
-          <div
-            className={`rounded-lg border px-4 py-3 ${
-              whatsAppReport.senderMode === 'sandbox'
-                ? 'border-amber-200 bg-amber-50 text-amber-800'
-                : 'border-blue-200 bg-blue-50 text-blue-800'
-            }`}
-          >
-            <p className="text-sm font-semibold">
-              {isArabic
-                ? whatsAppReport.senderMode === 'sandbox'
-                  ? 'وضع واتساب: Sandbox (للتجربة)'
-                  : 'وضع واتساب: مرسل مسجل'
-                : whatsAppReport.senderMode === 'sandbox'
-                  ? 'WhatsApp mode: Sandbox (testing)'
-                  : 'WhatsApp mode: Registered sender'}
-            </p>
-            {whatsAppReport.sender && (
-              <p className="mt-1 text-xs">
-                {isArabic ? `المرسل: ${whatsAppReport.sender}` : `Sender: ${whatsAppReport.sender}`}
+          <div className="space-y-3">
+            <div
+              className={`rounded-lg border px-4 py-3 ${
+                whatsAppReport.senderMode === 'sandbox'
+                  ? 'border-amber-200 bg-amber-50 text-amber-800'
+                  : 'border-blue-200 bg-blue-50 text-blue-800'
+              }`}
+            >
+              <p className="text-sm font-semibold">
+                {isArabic
+                  ? whatsAppReport.senderMode === 'sandbox'
+                    ? 'وضع واتساب: Sandbox (للتجربة)'
+                    : 'وضع واتساب: مرسل مسجل'
+                  : whatsAppReport.senderMode === 'sandbox'
+                    ? 'WhatsApp mode: Sandbox (testing)'
+                    : 'WhatsApp mode: Registered sender'}
               </p>
-            )}
-            <p className="mt-2 text-xs">
-              {isArabic
-                ? `المعالجة: ${whatsAppReport.sent || 0} | التسليم: ${whatsAppReport.delivered || 0} | الانتظار: ${whatsAppReport.pending || 0} | الفشل: ${whatsAppReport.failed || 0}`
-                : `Processed: ${whatsAppReport.sent || 0} | Delivered: ${whatsAppReport.delivered || 0} | Pending: ${whatsAppReport.pending || 0} | Failed: ${whatsAppReport.failed || 0}`}
-            </p>
-            {whatsAppReport.hint && <p className="mt-2 text-xs">{whatsAppReport.hint}</p>}
-            {!!whatsAppReport.results?.length && (
-              <div className="border-current/20 mt-3 max-h-36 overflow-y-auto rounded border bg-white/60 p-2">
-                {whatsAppReport.results.slice(0, 8).map((result, idx) => (
-                  <p key={`${result.sid || result.phone}-${idx}`} className="text-xs">
-                    {result.phone} - {(result.status || 'pending').toUpperCase()}
-                    {result.errorMessage ? ` (${result.errorMessage})` : ''}
+              {whatsAppReport.sender && (
+                <p className="mt-1 text-xs">
+                  {isArabic ? `المرسل: ${whatsAppReport.sender}` : `Sender: ${whatsAppReport.sender}`}
+                </p>
+              )}
+              <p className="mt-2 text-xs">
+                {isArabic
+                  ? `المعالجة: ${whatsAppReport.sent || 0} | التسليم: ${whatsAppReport.delivered || 0} | الانتظار: ${whatsAppReport.pending || 0} | الفشل: ${whatsAppReport.failed || 0}`
+                  : `Processed: ${whatsAppReport.sent || 0} | Delivered: ${whatsAppReport.delivered || 0} | Pending: ${whatsAppReport.pending || 0} | Failed: ${whatsAppReport.failed || 0}`}
+              </p>
+              {whatsAppReport.hint && <p className="mt-2 text-xs">{whatsAppReport.hint}</p>}
+              {!!whatsAppReport.results?.length && (
+                <div className="border-current/20 mt-3 max-h-36 overflow-y-auto rounded border bg-white/60 p-2">
+                  {whatsAppReport.results.slice(0, 8).map((result, idx) => (
+                    <p key={`${result.sid || result.phone}-${idx}`} className="text-xs">
+                      {result.phone} - {(result.status || 'pending').toUpperCase()}
+                      {result.errorMessage ? ` (${result.errorMessage})` : ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {!!whatsAppReport.mediaAttachmentAttempts?.length && (
+                <div className="border-current/20 mt-3 max-h-44 overflow-y-auto rounded border bg-white/60 p-2">
+                  <p className="mb-2 text-xs font-semibold">
+                    {isArabic ? 'تتبّع إرفاق بطاقة الدعوة:' : 'Invitation Card Attachment Debug:'}
                   </p>
-                ))}
-              </div>
+                  {whatsAppReport.mediaAttachmentAttempts.slice(0, 8).map((attempt, idx) => (
+                    <p key={`${attempt.phone}-${idx}`} className="text-xs">
+                      {attempt.phone} - {attempt.attempted ? 'MEDIA_ATTEMPTED' : 'MEDIA_SKIPPED'}
+                      {attempt.mode ? ` | mode=${attempt.mode}` : ''}
+                      {attempt.reason ? ` | reason=${attempt.reason}` : ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {sandboxJoinRequired && (
+              <WhatsAppSandboxHelper recipientPhone={sandboxFailedRecipient} mode="inline" isArabic={isArabic} />
             )}
           </div>
         )}

@@ -15,6 +15,32 @@ function getTwilioClient() {
   return twilioClient
 }
 
+function resolveConfiguredSandboxCode(): string | null {
+  const publicCode = (process.env.NEXT_PUBLIC_TWILIO_SANDBOX_CODE || '').trim()
+  const serverCode = (process.env.TWILIO_SANDBOX_CODE || '').trim()
+  return publicCode || serverCode || null
+}
+
+function extractJoinCodeFromTwilioMessage(message: string): string | null {
+  const normalized = String(message || '')
+  const match = normalized.match(/join\s+([a-z0-9-]+)/i)
+  return match?.[1] ? match[1] : null
+}
+
+function buildSandboxJoinGuidance(errorMessage: string): string {
+  const configuredCode = resolveConfiguredSandboxCode()
+  const detectedCode = extractJoinCodeFromTwilioMessage(errorMessage)
+  const joinCode = detectedCode || configuredCode
+  const base =
+    '*Twilio Sandbox*: Recipient is not joined to your sandbox yet. Ask them to send the join command to +14155238886 from WhatsApp, wait 2-3 minutes, then resend.'
+
+  if (joinCode) {
+    return `${base} Join command: join ${joinCode}`
+  }
+
+  return `${base} Set NEXT_PUBLIC_TWILIO_SANDBOX_CODE (or TWILIO_SANDBOX_CODE) to show the exact join command in-app.`
+}
+
 function formatTwilioWhatsAppError(error: any): string {
   const twilioCode = error?.code
   const twilioMessage = error?.message || 'Unknown error from Twilio'
@@ -25,7 +51,7 @@ function formatTwilioWhatsAppError(error: any): string {
   }
 
   if (twilioCode === 63015) {
-    return 'Recipient is not joined to Twilio WhatsApp Sandbox. Send the sandbox join code to +14155238886 from the recipient WhatsApp number first.'
+    return buildSandboxJoinGuidance(twilioMessage)
   }
 
   const baseMessage = twilioMessage || 'An unknown Twilio error occurred while sending WhatsApp message.'
@@ -36,7 +62,7 @@ function getTwilioWhatsAppErrorHint(errorCode?: number | null): string | null {
   if (!errorCode) return null
 
   if (errorCode === 63015) {
-    return 'Recipient is not joined to Twilio WhatsApp Sandbox. Send the sandbox join code to +14155238886 from the recipient WhatsApp number first.'
+    return buildSandboxJoinGuidance('')
   }
 
   if (errorCode === 63007) {
@@ -67,10 +93,12 @@ export async function sendWhatsAppMessage(toPhoneNumber: string, message: string
       to: toAddress,
     }
 
+    if (message) {
+      msgData.body = message
+    }
+
     if (mediaUrl) {
       msgData.mediaUrl = [mediaUrl]
-    } else {
-      msgData.body = message
     }
 
     const response = await getTwilioClient().messages.create(msgData)
@@ -171,6 +199,7 @@ export function getInvitationTemplateConfig(): { contentSid: string; templateNam
  * @param eventName - Name of the event
  * @param eventDate - Event date (e.g., "March 15, 2026")
  * @param eventTime - Event time (e.g., "3:00 PM")
+ * @param eventVenue - Event venue or location
  * @returns JSON string with template variables for {{1}} and {{2}}
  */
 export function formatInvitationTemplateVariables(
@@ -178,23 +207,29 @@ export function formatInvitationTemplateVariables(
   eventName: string,
   eventDate: string,
   eventTime: string,
+  eventVenue?: string | null,
   qrToken?: string,
   invitationLink?: string,
-  guestNote?: string | null
+  guestNote?: string | null,
+  bankDetails?: {
+    bankName?: string | null
+    accountNumber?: string | null
+    iban?: string | null
+  }
 ): string {
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
-  const checkInLink = qrToken ? `${appUrl}/check-in?code=${encodeURIComponent(qrToken)}` : ''
-  const qrLink = qrToken ? `https://quickchart.io/qr?size=320&text=${encodeURIComponent(qrToken)}` : ''
   const safeGuestName = guestName || 'Guest'
-  const noteSuffix = guestNote ? ` Note: ${guestNote}.` : ''
-  const inviteSuffix = invitationLink ? ` Your personal invitation: ${invitationLink}.` : ''
+  const normalizedGuestNote = (guestNote || '').trim().replace(/[.\s]+$/g, '')
+  const compactGuestNote = normalizedGuestNote.slice(0, 120)
+  const noteSuffix = compactGuestNote ? ` Note: ${compactGuestNote}.` : ''
+  const inviteSuffix = invitationLink ? ` Open invitation: ${invitationLink}` : ''
+  const locationSuffix = eventVenue ? ` at ${eventVenue}` : ''
 
   // Template uses {{1}} and {{2}} placeholders from Twilio's sample template.
   const variables = {
-    1: `${eventDate} at ${eventTime}`,
+    1: eventDate,
     2: qrToken
-      ? `Dear ${safeGuestName}, please confirm your attendance for ${eventName}.${noteSuffix} Your check-in code: ${qrToken}. QR: ${qrLink}${checkInLink ? ` | Check-in: ${checkInLink}` : ''}.${inviteSuffix}`
-      : `Dear ${safeGuestName}, please confirm your attendance for ${eventName}.${noteSuffix}${inviteSuffix}`,
+      ? `${eventTime} for ${eventName}${locationSuffix}.${inviteSuffix} Dear ${safeGuestName}, please confirm attendance. Check-in code: ${qrToken}.${noteSuffix}`
+      : `${eventTime} for ${eventName}${locationSuffix}.${inviteSuffix} Dear ${safeGuestName}, please confirm attendance.${noteSuffix}`,
   }
 
   return JSON.stringify(variables)

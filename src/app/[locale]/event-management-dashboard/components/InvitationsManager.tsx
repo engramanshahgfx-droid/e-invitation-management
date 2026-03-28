@@ -36,7 +36,10 @@ export default function InvitationsManager({
   const [invitations, setInvitations] = useState<InvitationItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [exportingInvitationId, setExportingInvitationId] = useState<string | null>(null)
   const [copiedLink, setCopiedLink] = useState<string | null>(null)
 
   const getInvitationUrl = (shareableLink: string) => `${window.location.origin}/${locale}/invitations/${shareableLink}`
@@ -117,6 +120,78 @@ export default function InvitationsManager({
     setTimeout(() => setCopiedLink(null), 2000)
   }
 
+  const handleExportInvitation = async (invitationId: string, format: 'pdf' | 'image') => {
+    try {
+      setExportingInvitationId(invitationId)
+      setError(null)
+      setNotice(null)
+
+      const response = await fetch(`/api/invitations/${invitationId}/export`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || 'Failed to export invitation')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${eventName || 'invitation'}-${invitationId}.${format === 'pdf' ? 'pdf' : 'svg'}`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : isArabic ? 'حدث خطأ' : 'An error occurred')
+    } finally {
+      setExportingInvitationId(null)
+    }
+  }
+
+  const handleSendEmailInvitations = async () => {
+    try {
+      setIsSendingEmail(true)
+      setError(null)
+      setNotice(null)
+
+      const latestInvitationId = invitations[0]?.id
+      const response = await fetch('/api/invitations/send-email', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          invitationId: latestInvitationId,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || (isArabic ? 'فشل إرسال البريد الإلكتروني' : 'Failed to send email invitations'))
+      }
+
+      setNotice(
+        isArabic
+          ? `تم إرسال ${data.sent || 0} دعوة عبر البريد الإلكتروني${data.failed ? `، فشل ${data.failed}` : ''}`
+          : `Sent ${data.sent || 0} email invitation${(data.sent || 0) === 1 ? '' : 's'}${data.failed ? `, ${data.failed} failed` : ''}`
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : isArabic ? 'حدث خطأ' : 'An error occurred')
+    } finally {
+      setIsSendingEmail(false)
+    }
+  }
+
   if (!isOpen) return null
   const templateInfo = INVITATION_TEMPLATES[templateId]
 
@@ -153,14 +228,36 @@ export default function InvitationsManager({
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
             )}
-            <button
-              onClick={handleCreateInvitation}
-              disabled={isCreating || isLoading}
-              className="hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-            >
-              <Icon name="PlusIcon" size={18} />
-              {isCreating ? (isArabic ? 'جارٍ...' : 'Creating...') : isArabic ? 'إنشاء دعوة' : 'Create'}
-            </button>
+            {notice && <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">{notice}</div>}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleCreateInvitation}
+                disabled={isCreating || isLoading}
+                className="hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                <Icon name="PlusIcon" size={18} />
+                {isCreating ? (isArabic ? 'جارٍ...' : 'Creating...') : isArabic ? 'إنشاء دعوة' : 'Create'}
+              </button>
+
+              <button
+                onClick={handleSendEmailInvitations}
+                disabled={isSendingEmail || isLoading}
+                className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/90 disabled:opacity-50"
+              >
+                {isSendingEmail ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-secondary-foreground border-t-transparent" />
+                ) : (
+                  <Icon name="EnvelopeIcon" size={18} />
+                )}
+                {isSendingEmail
+                  ? isArabic
+                    ? 'جارٍ الإرسال...'
+                    : 'Sending...'
+                  : isArabic
+                    ? 'إرسال بريد إلكتروني'
+                    : 'Send Email'}
+              </button>
+            </div>
             {isLoading && !invitations.length ? (
               <div className="flex justify-center py-8">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -217,14 +314,32 @@ export default function InvitationsManager({
                           {isArabic ? 'رابط' : 'Link'}
                         </button>
                       ) : (
-                        <a
-                          href={`/${locale}/invitations/${inv.shareable_link}`}
-                          target="_blank"
-                          className="bg-primary/10 hover:bg-primary/20 inline-flex gap-1 rounded px-3 py-2 text-xs text-primary"
-                        >
-                          <Icon name="EyeIcon" size={14} />
-                          {isArabic ? 'معاينة' : 'Preview'}
-                        </a>
+                        <>
+                          <a
+                            href={`/${locale}/invitations/${inv.shareable_link}`}
+                            target="_blank"
+                            className="bg-primary/10 hover:bg-primary/20 inline-flex gap-1 rounded px-3 py-2 text-xs text-primary"
+                          >
+                            <Icon name="EyeIcon" size={14} />
+                            {isArabic ? 'معاينة' : 'Preview'}
+                          </a>
+                          <button
+                            onClick={() => handleExportInvitation(inv.id, 'pdf')}
+                            disabled={exportingInvitationId === inv.id}
+                            className="bg-secondary/10 hover:bg-secondary/20 inline-flex gap-1 rounded px-3 py-2 text-xs text-secondary disabled:opacity-50"
+                          >
+                            <Icon name="DocumentArrowDownIcon" size={14} />
+                            {isArabic ? 'PDF' : 'PDF'}
+                          </button>
+                          <button
+                            onClick={() => handleExportInvitation(inv.id, 'image')}
+                            disabled={exportingInvitationId === inv.id}
+                            className="bg-accent/10 hover:bg-accent/20 inline-flex gap-1 rounded px-3 py-2 text-xs text-accent disabled:opacity-50"
+                          >
+                            <Icon name="PhotoIcon" size={14} />
+                            {isArabic ? 'صورة' : 'Image'}
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

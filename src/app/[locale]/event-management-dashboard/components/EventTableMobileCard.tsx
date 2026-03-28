@@ -15,6 +15,8 @@ interface Event {
   declined?: number
   noResponse?: number
   checkedIn?: number
+  openCount?: number
+  openRate?: number
   status: 'upcoming' | 'ongoing' | 'completed' | 'draft'
   description?: string
   event_type?: string
@@ -26,6 +28,7 @@ interface EventTableMobileCardProps {
   isSelected: boolean
   onSelect: () => void
   onEdit: () => void
+  onManageInvitations?: () => void
   onSelectTemplate?: () => void
   onDuplicate: () => void
   onViewAnalytics: () => void
@@ -37,6 +40,7 @@ const EventTableMobileCard = ({
   isSelected,
   onSelect,
   onEdit,
+  onManageInvitations,
   onSelectTemplate,
   onDuplicate,
   onViewAnalytics,
@@ -72,6 +76,8 @@ const EventTableMobileCard = ({
   const confirmed = event.confirmed ?? 0
   const declined = event.declined ?? 0
   const noResponse = event.noResponse ?? 0
+  const openCount = event.openCount ?? 0
+  const openRate = event.openRate ?? 0
 
   const attendanceRate = invitationsSent > 0 ? Math.round((checkedIn / invitationsSent) * 100) : 0
 
@@ -155,6 +161,13 @@ const EventTableMobileCard = ({
               <p className="mb-1 text-xs text-text-secondary">{isArabic ? 'نسبة الحضور' : 'Attendance Rate'}</p>
               <p className="font-mono text-xl font-bold text-primary">{attendanceRate}%</p>
             </div>
+            <div className="rounded-md bg-muted p-3 text-center">
+              <p className="mb-1 text-xs text-text-secondary">{isArabic ? 'معدل فتح الدعوات' : 'Invitation Open Rate'}</p>
+              <p className="font-mono text-xl font-bold text-accent">{openRate}%</p>
+              <p className="text-xs text-text-secondary">
+                {isArabic ? 'إجمالي الفتح' : 'Total Opens'}: {openCount}
+              </p>
+            </div>
           </div>
         )}
 
@@ -175,6 +188,16 @@ const EventTableMobileCard = ({
             >
               <Icon name="SparklesIcon" size={18} />
               <span className="text-sm font-medium">{isArabic ? 'القوالب' : 'Templates'}</span>
+            </button>
+          )}
+          {onManageInvitations && (
+            <button
+              onClick={onManageInvitations}
+              className="transition-smooth hover:bg-secondary/90 active:scale-97 flex flex-1 items-center justify-center gap-2 rounded-md bg-secondary px-4 py-2 text-secondary-foreground"
+              aria-label={isArabic ? `إدارة دعوات ${event.name}` : `Manage invitations for ${event.name}`}
+            >
+              <Icon name="EnvelopeIcon" size={18} />
+              <span className="text-sm font-medium">{isArabic ? 'إدارة' : 'Manage'}</span>
             </button>
           )}
           <button

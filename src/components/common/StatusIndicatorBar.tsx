@@ -1,7 +1,7 @@
 'use client'
 
 import Icon from '@/components/ui/AppIcon'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 
@@ -57,27 +57,70 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
 
   // Fetch event statistics
   useEffect(() => {
+    let isActive = true
+    let interval: number | null = null
+
     const fetchStats = async () => {
       try {
         setIsLoading(true)
-        const user = await getCurrentUser()
-        if (!user?.id) {
-          setIsLoading(false)
+        const session = await getCurrentSession().catch(() => null)
+        const token = session?.access_token
+
+        if (!token) {
+          if (isActive) {
+            setMetrics((prev) => prev.map((metric) => ({ ...metric, value: 0 })))
+            setIsLoading(false)
+          }
           return
         }
 
-        const params = new URLSearchParams({
-          userId: user.id,
-        })
+        const params = new URLSearchParams()
 
         if (eventId) {
           params.append('eventId', eventId)
         }
 
-        const response = await fetch(`/api/events/statistics?${params.toString()}`)
-        if (response.ok) {
-          const stats = await response.json()
+        const response = await fetch(`/api/events/statistics?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        })
 
+        if (!response.ok) {
+          const textBody = await response.text().catch(() => '')
+          let errorMessage = response.statusText
+
+          try {
+            const jsonBody = JSON.parse(textBody)
+            errorMessage = jsonBody?.error || errorMessage
+          } catch {
+            if (textBody) {
+              errorMessage = textBody
+            }
+          }
+
+          console.warn('Failed to fetch event statistics:', response.status, errorMessage)
+
+          if (isActive) {
+            setMetrics((prev) => prev.map((metric) => ({ ...metric, value: 0 })))
+          }
+
+          // If auth failed, stop further polling to avoid repeated error noise
+          if ([401, 403].includes(response.status) && interval !== null) {
+            clearInterval(interval)
+          }
+
+          return
+        }
+
+        const stats = await response.json().catch(() => null)
+        if (!stats) {
+          console.warn('Failed to parse statistics response')
+          return
+        }
+
+        if (isActive) {
           setMetrics((prev) => [
             { ...prev[0], value: stats.invitationsSent || 0 },
             { ...prev[1], value: stats.confirmedGuests || 0 },
@@ -86,18 +129,28 @@ const StatusIndicatorBar = ({ className = '', eventId }: StatusIndicatorBarProps
           ])
         }
       } catch (error) {
-        console.error('Error fetching statistics:', error)
+        console.warn('Error fetching statistics:', error)
+        if (isActive) {
+          setMetrics((prev) => prev.map((metric) => ({ ...metric, value: 0 })))
+        }
       } finally {
-        setIsLoading(false)
+        if (isActive) {
+          setIsLoading(false)
+        }
       }
     }
 
     fetchStats()
 
     // Refresh stats every 10 seconds
-    const interval = setInterval(fetchStats, 10000)
+    interval = window.setInterval(fetchStats, 10000)
 
-    return () => clearInterval(interval)
+    return () => {
+      isActive = false
+      if (interval !== null) {
+        clearInterval(interval)
+      }
+    }
   }, [eventId])
 
   const getColorClasses = (color: StatusMetric['color']) => {

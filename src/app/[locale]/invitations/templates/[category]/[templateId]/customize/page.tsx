@@ -106,53 +106,66 @@ export default function TemplateCustomizePage() {
         throw new Error('Missing active session')
       }
 
-      if (eventId && eventRecord) {
-        const response = await fetch(`/api/events/${eventId}`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: eventRecord.name,
-            date: eventRecord.date,
-            time: eventRecord.time,
-            venue: eventRecord.venue,
-            description: eventRecord.description,
-            eventType: eventRecord.event_type,
-            expectedGuests: eventRecord.expected_guests,
-            status: eventRecord.status,
-            templateId,
-          }),
-        })
+      if (!eventId) {
+        throw new Error('Missing eventId. Please return to Events and open template customization from a specific event.')
+      }
 
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to attach template to event')
-        }
+      if (!eventRecord) {
+        throw new Error('Event details are not loaded yet. Please refresh and try saving again.')
+      }
 
-        const invitationResponse = await fetch('/api/invitations/create', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: eventRecord.name,
+          date: eventRecord.date,
+          time: eventRecord.time,
+          venue: eventRecord.venue,
+          description: eventRecord.description,
+          eventType: eventRecord.event_type,
+          expectedGuests: eventRecord.expected_guests,
+          status: eventRecord.status,
+          templateId,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to attach template to event')
+      }
+
+      const invitationResponse = await fetch('/api/invitations/create', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        // Persist full editor payload in customization so export/WhatsApp can render designed cards.
+        body: JSON.stringify({
+          event_id: eventId,
+          template_id: templateId,
+          invitation_data: {
+            ...data.invitation_data,
             event_id: eventId,
             template_id: templateId,
-            invitation_data: {
-              ...data.invitation_data,
-              event_id: eventId,
-              template_id: templateId,
-            },
-            customization: data.customization,
-          }),
-        })
+          },
+          customization: {
+            ...(data.customization || {}),
+            canvas_items: data.canvas_items || [],
+            backdrop_id: data.backdrop_id || null,
+            backdrop_css: data.backdrop_css || null,
+            header_logo: data.header_logo || null,
+          },
+        }),
+      })
 
-        if (!invitationResponse.ok) {
-          const error = await invitationResponse.json()
-          throw new Error(error.error || 'Failed to save customized invitation')
-        }
+      if (!invitationResponse.ok) {
+        const error = await invitationResponse.json()
+        throw new Error(error.error || 'Failed to save customized invitation')
       }
 
       console.log('Invitation saved:', data)
@@ -161,6 +174,7 @@ export default function TemplateCustomizePage() {
       router.push(`/${currentLocale}/event-management-dashboard`)
     } catch (error) {
       console.error('Failed to save invitation:', error)
+      throw error
     }
   }
 

@@ -15,17 +15,32 @@ interface WhatsAppSandboxHelperProps {
   recipientPhone?: string
   sandboxCode?: string
   mode?: 'modal' | 'inline' | 'toast'
+  isArabic?: boolean
 }
 
 export const WhatsAppSandboxHelper: React.FC<WhatsAppSandboxHelperProps> = ({
   recipientPhone,
-  sandboxCode = 'welcome-mango-42',
+  sandboxCode,
   mode = 'inline',
+  isArabic = false,
 }) => {
-  const instructionText = `Send this message to +14155238886:\n\njoin ${sandboxCode}`
+  const envSandboxCode = getSandboxCode()
+  const resolvedSandboxCode = sandboxCode || envSandboxCode || ''
+  const isUsingFallbackSandboxCode = !sandboxCode && !envSandboxCode
+  const joinText = resolvedSandboxCode ? `join ${resolvedSandboxCode}` : 'join <your-sandbox-code>'
+  const joinLink = resolvedSandboxCode
+    ? `https://wa.me/14155238886?text=${encodeURIComponent(joinText)}`
+    : 'https://wa.me/14155238886'
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(`join ${sandboxCode}`)
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(joinText)
+    } catch {
+      // Gracefully fallback when clipboard permissions are denied/dismissed.
+      if (typeof window !== 'undefined') {
+        window.prompt(isArabic ? 'انسخ رمز الانضمام:' : 'Copy this join code:', joinText)
+      }
+    }
   }
 
   if (mode === 'inline') {
@@ -36,37 +51,86 @@ export const WhatsAppSandboxHelper: React.FC<WhatsAppSandboxHelperProps> = ({
           <div className="flex-1">
             <h4 className="font-semibold text-yellow-900">WhatsApp Sandbox Mode</h4>
             <p className="mt-1 text-yellow-800">
-              This message couldn't be delivered. The recipient hasn't joined the WhatsApp Sandbox yet.
+              {isArabic
+                ? 'تعذر تسليم الرسالة لأن المستلم لم ينضم إلى WhatsApp Sandbox بعد.'
+                : "This message couldn't be delivered. The recipient hasn't joined the WhatsApp Sandbox yet."}
             </p>
 
             <div className="mt-3 space-y-2">
-              <p className="font-medium text-yellow-900">To fix this, the recipient must:</p>
+              <p className="font-medium text-yellow-900">
+                {isArabic ? 'لإصلاح المشكلة، يجب على المستلم:' : 'To fix this, the recipient must:'}
+              </p>
               <ol className="list-inside list-decimal space-y-1 text-yellow-800">
                 <li>
-                  Send this message to <strong>+14155238886</strong> from WhatsApp:
+                  {isArabic
+                    ? 'إرسال الرسالة التالية إلى '
+                    : 'Send this message to '}
+                  <strong>+14155238886</strong>
+                  {isArabic ? ' من واتساب:' : ' from WhatsApp:'}
                 </li>
               </ol>
 
               <div className="mt-2 flex items-center gap-2 rounded bg-white p-2">
-                <code className="flex-1 font-mono text-sm text-gray-900">join {sandboxCode}</code>
+                <code className="flex-1 font-mono text-sm text-gray-900">join {resolvedSandboxCode}</code>
                 <button
                   onClick={copyToClipboard}
                   className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-100"
                   title="Copy to clipboard"
                 >
-                  📋 Copy
+                  {isArabic ? 'نسخ' : 'Copy'}
                 </button>
               </div>
 
+              <a
+                href={joinLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded bg-yellow-700 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-800"
+              >
+                {isArabic ? 'فتح واتساب مع رمز الانضمام' : 'Open WhatsApp with Join Code'}
+              </a>
+
               <p className="text-xs text-yellow-700">
-                After they join, wait 2-3 minutes and try sending the invitation again.
+                {isArabic
+                  ? 'بعد الانضمام، انتظر 2-3 دقائق ثم أعد إرسال الدعوة.'
+                  : 'After they join, wait 2-3 minutes and try sending the invitation again.'}
               </p>
+
+              <div className="rounded border border-yellow-300 bg-white/70 p-2 text-xs text-yellow-900">
+                {isArabic
+                  ? 'إذا كانت ميزات الخصوصية مفعلة في Twilio، فقد يتم الاحتفاظ برقم الهاتف مؤقتاً لمدة تصل إلى 3 أيام.'
+                  : "If Privacy features are enabled in Twilio, the sandbox may temporarily store the phone number for up to 3 days."}
+              </div>
+
+              <div className="rounded border border-yellow-300 bg-white/70 p-2 text-xs text-yellow-900">
+                {isArabic
+                  ? 'قد لا ينجح Sandbox دائماً في تسليم الرسائل الدولية. للحصول على أفضل نتيجة، استخدم مرسل WhatsApp مسجلاً.'
+                  : 'Sandbox may not reliably deliver international messages. For best results, register your own WhatsApp sender.'}
+              </div>
+
+              {isUsingFallbackSandboxCode && (
+                <div className="rounded border border-amber-400 bg-amber-100 p-2 text-xs text-amber-900">
+                  {isArabic
+                    ? 'تنبيه إعدادات: لا يوجد رمز انضمام مضبوط. اضبط NEXT_PUBLIC_TWILIO_SANDBOX_CODE لعرض رمز الانضمام الصحيح.'
+                    : 'Configuration warning: sandbox join code is not configured. Set NEXT_PUBLIC_TWILIO_SANDBOX_CODE to show the exact join command.'}
+                </div>
+              )}
             </div>
 
             <div className="mt-4 border-t border-yellow-200 pt-3 text-xs text-yellow-700">
-              <strong>Production Note:</strong> In production, use a registered WhatsApp Business Number instead of the
-              sandbox.
+              <strong>{isArabic ? 'ملاحظة الإنتاج:' : 'Production Note:'}</strong>{' '}
+              {isArabic
+                ? 'في بيئة الإنتاج، استخدم رقم WhatsApp Business مسجلًا بدلًا من Sandbox.'
+                : 'In production, use a registered WhatsApp Business Number instead of the sandbox.'}
             </div>
+
+            {recipientPhone && (
+              <div className="mt-2 text-xs text-yellow-700">
+                {isArabic
+                  ? `رقم المستلم الذي فشل: ${recipientPhone}`
+                  : `Failed recipient phone: ${recipientPhone}`}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -81,13 +145,15 @@ export const WhatsAppSandboxHelper: React.FC<WhatsAppSandboxHelperProps> = ({
           <div className="flex-1">
             <p className="font-semibold text-yellow-900">WhatsApp Sandbox Message Failed</p>
             <p className="mt-1 text-sm text-yellow-800">
-              Recipient needs to join sandbox. Send "join {sandboxCode}" to +14155238886 first.
+              {isArabic
+                ? `يجب على المستلم الانضمام إلى Sandbox أولاً. أرسل "join ${resolvedSandboxCode}" إلى +14155238886.`
+                : `Recipient needs to join sandbox. Send "join ${resolvedSandboxCode}" to +14155238886 first.`}
             </p>
             <button
               onClick={copyToClipboard}
               className="mt-2 text-xs font-medium text-yellow-700 underline hover:text-yellow-900"
             >
-              Copy join code
+              {isArabic ? 'نسخ رمز الانضمام' : 'Copy join code'}
             </button>
           </div>
         </div>
@@ -123,5 +189,6 @@ export function formatWhatsAppError(error: string, sandboxCode?: string): string
 export function getSandboxCode(): string | null {
   // This would come from your Twilio API in production
   // For now, return from env or null
-  return process.env.NEXT_PUBLIC_TWILIO_SANDBOX_CODE || null
+  const configuredCode = (process.env.NEXT_PUBLIC_TWILIO_SANDBOX_CODE || '').trim()
+  return configuredCode || null
 }

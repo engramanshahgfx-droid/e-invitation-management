@@ -1,5 +1,6 @@
 'use client'
 
+import { getCurrentSession } from '@/lib/auth'
 import Icon from '@/components/ui/AppIcon'
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
@@ -24,16 +25,66 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
   const isArabic = locale === 'ar'
   const [isOverflowOpen, setIsOverflowOpen] = useState(false)
 
-  const handleExportExcel = () => {
-    console.log('Exporting to Excel...')
+  const downloadWithAuth = async (url: string, filename: string) => {
+    const session = await getCurrentSession()
+    if (!session?.access_token) {
+      throw new Error('No active session found')
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      throw new Error(payload?.error || 'Download failed')
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+  }
+
+  const handleExportExcel = async () => {
+    try {
+      if (pathname.endsWith('/event-management-dashboard')) {
+        await downloadWithAuth('/api/reports/events/export', 'event-summary.csv')
+        return
+      }
+
+      if (pathname.endsWith('/guest-list-management')) {
+        await downloadWithAuth('/api/reports/guests/export', 'guest-list.csv')
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to export data')
+    }
   }
 
   const handleWhatsAppBulk = () => {
     console.log('Sending bulk WhatsApp messages...')
   }
 
-  const handleGenerateReport = () => {
-    console.log('Generating report...')
+  const handleGenerateReport = async () => {
+    try {
+      if (pathname.endsWith('/event-management-dashboard')) {
+        await downloadWithAuth('/api/reports/dashboard/export', 'dashboard-report.csv')
+        return
+      }
+
+      if (pathname.endsWith('/qr-check-in-system')) {
+        await downloadWithAuth('/api/reports/checkins/export', 'check-in-report.csv')
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to generate report')
+    }
   }
 
   const handlePrintBadges = () => {
@@ -99,7 +150,9 @@ const QuickActionToolbar = ({ className = '' }: QuickActionToolbarProps) => {
     },
   ]
 
-  const visibleActions = allActions.filter((action) => !action.showOnPaths || action.showOnPaths.includes(pathname))
+  const visibleActions = allActions.filter(
+    (action) => !action.showOnPaths || action.showOnPaths.some((path) => pathname.endsWith(path))
+  )
 
   const primaryActions = visibleActions.slice(0, 3)
   const overflowActions = visibleActions.slice(3)

@@ -10,19 +10,49 @@ import RecentCheckInsFeed from './RecentCheckInsFeed'
 
 const QRCheckInInteractive = () => {
   const [selectedEventId, setSelectedEventId] = useState('')
-  const [token, setToken] = useState<string | null>(null)
   const [events, setEvents] = useState<QRCheckInEvent[]>([])
   const [guests, setGuests] = useState<QRCheckInGuest[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [isLoadingGuests, setIsLoadingGuests] = useState(false)
   const [checkInError, setCheckInError] = useState<string | null>(null)
 
-  const fetchGuests = async (eventId: string, accessToken: string) => {
+  const sendAuthorizedRequest = async (input: string, init: RequestInit = {}) => {
+    const execute = async (authToken: string) => {
+      const headers = new Headers(init.headers)
+      headers.set('Authorization', `Bearer ${authToken}`)
+
+      return fetch(input, {
+        ...init,
+        headers,
+      })
+    }
+
+    const initialSession = await getCurrentSession().catch(() => null)
+    const initialToken = initialSession?.access_token || null
+
+    if (!initialToken) {
+      throw new Error('Your session expired. Please sign in again.')
+    }
+
+    let response = await execute(initialToken)
+
+    if (response.status === 401) {
+      const refreshedSession = await getCurrentSession().catch(() => null)
+      const refreshedToken = refreshedSession?.access_token || null
+
+      if (refreshedToken && refreshedToken !== initialToken) {
+        response = await execute(refreshedToken)
+      }
+    }
+
+    return response
+  }
+
+  const fetchGuests = async (eventId: string) => {
     setIsLoadingGuests(true)
     try {
-      const response = await fetch(`/api/guests/list?eventId=${eventId}`, {
+      const response = await sendAuthorizedRequest(`/api/guests/list?eventId=${eventId}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       })
@@ -71,11 +101,8 @@ const QRCheckInInteractive = () => {
           return
         }
 
-        setToken(session.access_token)
-
-        const response = await fetch('/api/events/list', {
+        const response = await sendAuthorizedRequest('/api/events/list', {
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
         })
@@ -98,7 +125,7 @@ const QRCheckInInteractive = () => {
         setEvents(nextEvents)
         if (nextEvents.length > 0) {
           setSelectedEventId(nextEvents[0].id)
-          await fetchGuests(nextEvents[0].id, session.access_token)
+          await fetchGuests(nextEvents[0].id)
         }
       } catch (error) {
         console.error('Failed to initialize QR check-in:', error)
@@ -115,7 +142,7 @@ const QRCheckInInteractive = () => {
     qrToken?: string
     method: 'manual' | 'qr_scan'
   }): Promise<ScanSubmissionResult> => {
-    if (!token || !selectedEventId) {
+    if (!selectedEventId) {
       return {
         status: 'error',
         message: 'Select an event first',
@@ -125,10 +152,9 @@ const QRCheckInInteractive = () => {
     setCheckInError(null)
 
     try {
-      const response = await fetch('/api/checkins', {
+      const response = await sendAuthorizedRequest('/api/checkins', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -142,7 +168,7 @@ const QRCheckInInteractive = () => {
       const data = await response.json()
 
       if (response.status === 409) {
-        await fetchGuests(selectedEventId, token)
+        await fetchGuests(selectedEventId)
         return {
           status: 'duplicate',
           message: data.message || 'Guest is already checked in',
@@ -155,7 +181,7 @@ const QRCheckInInteractive = () => {
         throw new Error(data.error || data.message || 'Check-in failed')
       }
 
-      await fetchGuests(selectedEventId, token)
+      await fetchGuests(selectedEventId)
 
       return {
         status: 'success',
@@ -180,9 +206,7 @@ const QRCheckInInteractive = () => {
   const handleEventChange = async (eventId: string) => {
     setSelectedEventId(eventId)
     setCheckInError(null)
-    if (token) {
-      await fetchGuests(eventId, token)
-    }
+    await fetchGuests(eventId)
   }
 
   const selectedEvent = events.find((event) => event.id === selectedEventId) || null

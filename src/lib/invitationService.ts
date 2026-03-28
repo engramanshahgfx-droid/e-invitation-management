@@ -44,19 +44,21 @@ export class InvitationService {
     createdBy?: string
   ): Promise<CreatedInvitation> {
     try {
+      const rawCustomization: Record<string, unknown> = (customization as any) || {}
       const { data: invitationData_response, error } = await (this.supabase.from('invitation_templates') as any)
         .insert({
           event_id: eventId,
           template_id: templateId,
           customization: {
-            primary_color: customization?.primary_color || null,
-            secondary_color: customization?.secondary_color || null,
-            accent_color: customization?.accent_color || null,
-            font_family: customization?.font_family || 'sans-serif',
-            show_guest_count: customization?.show_guest_count ?? true,
-            show_dress_code: customization?.show_dress_code ?? true,
-            show_special_instructions: customization?.show_special_instructions ?? false,
-            language: customization?.language || 'en',
+            ...rawCustomization,
+            primary_color: (customization as any)?.primary_color || null,
+            secondary_color: (customization as any)?.secondary_color || null,
+            accent_color: (customization as any)?.accent_color || null,
+            font_family: (customization as any)?.font_family || 'sans-serif',
+            show_guest_count: (customization as any)?.show_guest_count ?? true,
+            show_dress_code: (customization as any)?.show_dress_code ?? true,
+            show_special_instructions: (customization as any)?.show_special_instructions ?? false,
+            language: (customization as any)?.language || 'en',
           },
           invitation_data: invitationData,
           created_by: createdBy || (await this.getCurrentUserId()) || '',
@@ -291,12 +293,22 @@ export class InvitationService {
     customization?: Partial<InvitationCustomization>
   ): Promise<void> {
     try {
-      const { error } = await (this.supabase.from('events') as any)
+      let { error } = await (this.supabase.from('events') as any)
         .update({
           template_id: templateId,
           template_customization: customization || {},
         })
         .eq('id', eventId)
+
+      if (error && String(error.message || '').includes('template_id')) {
+        const fallback = await (this.supabase.from('events') as any)
+          .update({
+            template_customization: customization || {},
+          })
+          .eq('id', eventId)
+
+        error = fallback.error
+      }
 
       if (error) {
         throw new Error(`Failed to set event template: ${error.message}`)
@@ -314,10 +326,19 @@ export class InvitationService {
     eventId: string
   ): Promise<{ template_id: TemplateStyle; template_customization: InvitationCustomization }> {
     try {
-      const { data, error } = await (this.supabase.from('events') as any)
+      let { data, error } = await (this.supabase.from('events') as any)
         .select('template_id, template_customization')
         .eq('id', eventId)
         .single()
+
+      if (error && String(error.message || '').includes('template_id')) {
+        const fallback = await (this.supabase.from('events') as any)
+          .select('template_customization')
+          .eq('id', eventId)
+          .single()
+        data = fallback.data
+        error = fallback.error
+      }
 
       if (error) {
         throw new Error(`Failed to fetch event template settings: ${error.message}`)

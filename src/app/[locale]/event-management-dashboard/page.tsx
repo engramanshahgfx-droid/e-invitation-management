@@ -7,6 +7,7 @@ import StatusIndicatorBar from '@/components/common/StatusIndicatorBar'
 import UserAuthGuard from '@/components/UserAuthGuard'
 import { checkSubscriptionStatus, getCurrentUser } from '@/lib/auth'
 import { useLocale } from 'next-intl'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import EventManagementInteractive from './components/EventManagementInteractive'
 
@@ -53,6 +54,12 @@ export default function EventManagementDashboardPage() {
                     ? 'أنشئ فعالياتك وأدرها، وخصص الدعوات، وتابع ردود الضيوف'
                     : 'Create and manage your events, customize invitations, and track guest responses'}
                 </p>
+                <Link
+                  href={`/${locale}/event-management-dashboard/payments`}
+                  className="mt-2 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  {isArabic ? 'فتح صفحة تفاصيل الضيوف والحضور والمدفوعات' : 'Open full guest details, attendance, and payments'}
+                </Link>
               </div>
               <QuickActionToolbar />
             </div>

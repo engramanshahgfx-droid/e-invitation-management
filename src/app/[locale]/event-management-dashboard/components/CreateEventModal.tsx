@@ -19,6 +19,10 @@ interface EventFormData {
   description: string
   expectedGuests: number
   eventType: string
+  bankAccountHolder: string
+  bankName: string
+  bankAccountNumber: string
+  bankIban: string
 }
 
 const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEventModalProps) => {
@@ -34,6 +38,10 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
     description: '',
     expectedGuests: 0,
     eventType: 'wedding',
+    bankAccountHolder: '',
+    bankName: '',
+    bankAccountNumber: '',
+    bankIban: '',
   })
 
   useEffect(() => {
@@ -51,6 +59,10 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
         description: '',
         expectedGuests: 0,
         eventType: 'wedding',
+        bankAccountHolder: '',
+        bankName: '',
+        bankAccountNumber: '',
+        bankIban: '',
       })
     }
     setError(null)
@@ -214,6 +226,69 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit, editingEvent }: CreateEve
                     isArabic ? 'أضف أي تفاصيل إضافية عن فعاليتك...' : 'Add any additional details about your event...'
                   }
                 />
+              </div>
+
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-text-primary">
+                  {isArabic ? 'بيانات الحساب البنكي لاستلام دفعات الضيوف' : 'Bank account for guest direct transfers'}
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="bankAccountHolder" className="mb-2 block text-sm font-medium text-text-primary">
+                      {isArabic ? 'اسم صاحب الحساب' : 'Account Holder Name'} *
+                    </label>
+                    <input
+                      type="text"
+                      id="bankAccountHolder"
+                      name="bankAccountHolder"
+                      value={formData.bankAccountHolder}
+                      onChange={handleChange}
+                      required
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="bankName" className="mb-2 block text-sm font-medium text-text-primary">
+                      {isArabic ? 'اسم البنك' : 'Bank Name'} *
+                    </label>
+                    <input
+                      type="text"
+                      id="bankName"
+                      name="bankName"
+                      value={formData.bankName}
+                      onChange={handleChange}
+                      required
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="bankAccountNumber" className="mb-2 block text-sm font-medium text-text-primary">
+                      {isArabic ? 'رقم الحساب' : 'Account Number'} *
+                    </label>
+                    <input
+                      type="text"
+                      id="bankAccountNumber"
+                      name="bankAccountNumber"
+                      value={formData.bankAccountNumber}
+                      onChange={handleChange}
+                      required
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="bankIban" className="mb-2 block text-sm font-medium text-text-primary">
+                      {isArabic ? 'رقم الآيبان' : 'IBAN'}
+                    </label>
+                    <input
+                      type="text"
+                      id="bankIban"
+                      name="bankIban"
+                      value={formData.bankIban}
+                      onChange={handleChange}
+                      className="transition-smooth w-full rounded-md border border-input bg-background px-4 py-3 text-text-primary focus:outline-none focus:ring-3 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                </div>
               </div>
 
               {!editingEvent && (

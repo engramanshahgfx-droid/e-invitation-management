@@ -398,3 +398,139 @@ export interface BookingConfirmation {
   payment_status: PaymentStatus
   next_steps?: string[]
 }
+
+// Shopping Cart Types
+export interface CartItem {
+  id: string
+  guest_id: string
+  event_id: string
+  service_id: string
+  service?: Service
+  quantity: number
+  unit_price: number
+  notes?: string
+  added_at: string
+  updated_at: string
+}
+
+export interface Cart {
+  items: CartItem[]
+  event_id: string
+  guest_id: string
+  subtotal: number
+  tax_amount: number
+  platform_fee: number
+  discount_amount: number
+  total: number
+  item_count: number
+}
+
+export interface AddToCartRequest {
+  service_id: string
+  quantity: number
+  notes?: string
+}
+
+export interface UpdateCartItemRequest {
+  quantity?: number
+  notes?: string
+}
+
+// Bulk Order Types
+export interface BulkOrder {
+  id: string
+  event_id: string
+  customer_id: string
+  order_number: string
+  status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'refunded'
+  subtotal: number
+  discount_amount: number
+  platform_fee: number
+  tax_amount: number
+  total_amount: number
+  payment_status: 'unpaid' | 'paid' | 'refunded' | 'partial_refund' | 'pending_verification' | 'rejected'
+  payment_method?: string
+  stripe_payment_intent_id?: string
+  bank_reference_code?: string
+  proof_image_url?: string
+  proof_submitted_at?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  review_note?: string
+  notes?: string
+  bookings?: Booking[] // Related individual bookings
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CheckoutRequest {
+  items: Array<{ service_id: string; quantity: number; notes?: string }>
+  coupon_code?: string
+  payment_method: string // 'credit_card' | 'debit_card' | 'digital_wallet' | 'bank_transfer'
+}
+
+export interface CheckoutResponse {
+  bulk_order_id: string
+  stripe_client_secret?: string
+  checkout_url?: string
+  order_number: string
+  total_amount: number
+  items_count: number
+}
+
+export interface PaymentMethod {
+  id: string
+  customer_id: string
+  payment_provider: string // 'stripe', 'paypal', 'mada', etc.
+  provider_id: string
+  last_four?: string
+  card_brand?: string
+  exp_month?: number
+  exp_year?: number
+  is_default: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Refund {
+  id: string
+  booking_id: string
+  bulk_order_id?: string
+  refund_amount: number
+  refund_reason: string
+  refund_notes?: string
+  stripe_refund_id?: string
+  refund_status: 'initiated' | 'processing' | 'completed' | 'failed'
+  processed_by?: string
+  processed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceNotification {
+  id: string
+  organizer_id: string
+  event_id: string
+  booking_id?: string
+  bulk_order_id?: string
+  notification_type: 'booking_received' | 'payment_confirmed' | 'refund_issued' | 'payment_proof_received'
+  title: string
+  message: string
+  is_read: boolean
+  read_at?: string
+  action_url?: string
+  created_at: string
+}
+
+export interface GuestAssignedService {
+  id: string
+  guest_id: string
+  service_id: string
+  event_id: string
+  booking_id?: string
+  quantity: number
+  assigned_by_organizer: boolean
+  assigned_at: string
+}

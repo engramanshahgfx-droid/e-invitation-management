@@ -1,7 +1,7 @@
 // API Route: Get Invitation by Shareable Link
 // Location: src/app/api/invitations/shared/[shareLink]/route.ts
 
-import InvitationService from '@/lib/invitationService'
+import { getInvitationByPublicLink } from '@/lib/invitationTemplateCompat'
 import { personalizeInvitationData } from '@/lib/invitationPersonalization'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const guestId = url.searchParams.get('guestId') || url.searchParams.get('guest_id')
 
     // Get invitation by shareable link
-    const invitation = await InvitationService.getInvitationByLink(shareLink)
+    const invitation = await getInvitationByPublicLink(supabase as any, shareLink)
     let invitationWithPersonalization = invitation
 
     let qrToken: string | undefined
@@ -43,14 +43,80 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Track view
+    // Track view with guest-level metadata when available.
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-client-ip')
     const userAgent = request.headers.get('user-agent') || undefined
     const referrer = request.headers.get('referer') || undefined
 
-    await InvitationService.trackInvitationView(invitation.id, ip || undefined, userAgent, referrer)
+    try {
+      await supabase.from('invitation_views').insert({
+        invitation_template_id: invitation.id,
+        viewer_ip: ip || null,
+        user_agent: userAgent || null,
+        referrer: referrer || null,
+        metadata: guestId
+          ? {
+              guest_id: guestId,
+              event_id: invitation.event_id,
+              share_link: shareLink,
+            }
+          : {
+              event_id: invitation.event_id,
+              share_link: shareLink,
+            },
+      })
+    } catch {
+      // Older schemas may not have invitation_views yet.
+    }
 
-    return NextResponse.json({ ...invitationWithPersonalization, qr_token: qrToken ?? null })
+    try {
+      await supabase
+        .from('invitation_templates')
+        .update({ view_count: ((invitation as any).view_count || 0) + 1 })
+        .eq('id', invitation.id)
+    } catch {
+      // Older schemas may not store view counts on invitation_templates.
+    }
+
+    let eventData: any = null
+    const bankDetailsResult = await supabase
+      .from('events')
+      .select('bank_account_holder, bank_name, bank_account_number, bank_iban')
+      .eq('id', invitation.event_id)
+      .maybeSingle()
+
+    if (!bankDetailsResult.error) {
+      eventData = bankDetailsResult.data
+    }
+
+    let guestPaymentSummary: { has_payment: boolean; latest_status: string | null } | null = null
+    if (guestId) {
+      const { data: latestPayment } = await supabase
+        .from('guest_payments')
+        .select('status')
+        .eq('event_id', invitation.event_id)
+        .eq('guest_id', guestId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      guestPaymentSummary = {
+        has_payment: Boolean(latestPayment),
+        latest_status: latestPayment?.status || null,
+      }
+    }
+
+    return NextResponse.json({
+      ...invitationWithPersonalization,
+      qr_token: qrToken ?? null,
+      bank_details: {
+        bank_account_holder: (eventData as any)?.bank_account_holder || null,
+        bank_name: (eventData as any)?.bank_name || null,
+        bank_account_number: (eventData as any)?.bank_account_number || null,
+        bank_iban: (eventData as any)?.bank_iban || null,
+      },
+      guest_payment_summary: guestPaymentSummary,
+    })
   } catch (error) {
     console.error('Error fetching shared invitation:', error)
     return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })

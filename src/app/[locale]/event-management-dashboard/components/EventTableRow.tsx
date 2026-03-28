@@ -13,6 +13,8 @@ interface Event {
   declined?: number
   noResponse?: number
   checkedIn?: number
+  openCount?: number
+  openRate?: number
   status: 'upcoming' | 'ongoing' | 'completed' | 'draft'
   description?: string
   event_type?: string
@@ -71,6 +73,8 @@ const EventTableRow = ({
   const declined = event.declined ?? 0
   const noResponse = event.noResponse ?? 0
   const checkedIn = event.checkedIn ?? 0
+  const openCount = event.openCount ?? 0
+  const openRate = event.openRate ?? 0
 
   const attendanceRate = invitationsSent > 0 ? Math.round((checkedIn / invitationsSent) * 100) : 0
 
@@ -107,6 +111,9 @@ const EventTableRow = ({
             <span className="text-success">{confirmed}</span>
             <span className="text-destructive">{declined}</span>
             <span className="text-warning">{noResponse}</span>
+          </div>
+          <div className="text-xs text-text-secondary">
+            {isArabic ? 'الفتح' : 'Opens'}: {openCount} ({openRate}%)
           </div>
         </div>
       </td>

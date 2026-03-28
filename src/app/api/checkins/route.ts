@@ -44,18 +44,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Event not found or access denied' }, { status: 404 })
     }
 
-    let guestQuery = supabase
-      .from('guests')
-      .select('id, name, phone, email, qr_token, checked_in, checked_in_at, status, plus_ones')
-      .eq('event_id', eventId)
+    const guestSelection = 'id, name, phone, email, qr_token, checked_in, checked_in_at, status, plus_ones'
+
+    let guest: any = null
+    let guestError: any = null
 
     if (guestId) {
-      guestQuery = guestQuery.eq('id', guestId)
-    } else {
-      guestQuery = guestQuery.eq('qr_token', String(qrToken).trim())
-    }
+      const guestResult = await supabase
+        .from('guests')
+        .select(guestSelection)
+        .eq('event_id', eventId)
+        .eq('id', guestId)
+        .single()
 
-    const { data: guest, error: guestError } = await guestQuery.single()
+      guest = guestResult.data
+      guestError = guestResult.error
+    } else {
+      const normalizedQrToken = String(qrToken).trim()
+
+      const exactGuestResult = await supabase
+        .from('guests')
+        .select(guestSelection)
+        .eq('event_id', eventId)
+        .eq('qr_token', normalizedQrToken)
+        .maybeSingle()
+
+      guest = exactGuestResult.data
+      guestError = exactGuestResult.error
+
+      if (!guest && !guestError && normalizedQrToken.length >= 6) {
+        const prefixGuestResult = await supabase
+          .from('guests')
+          .select(guestSelection)
+          .eq('event_id', eventId)
+          .ilike('qr_token', `${normalizedQrToken}%`)
+          .limit(2)
+
+        if (prefixGuestResult.error) {
+          guestError = prefixGuestResult.error
+        } else if ((prefixGuestResult.data || []).length === 1) {
+          guest = prefixGuestResult.data?.[0]
+        } else if ((prefixGuestResult.data || []).length > 1) {
+          return NextResponse.json(
+            {
+              error: 'Multiple guests match this short QR code. Use the full token or scan the QR image.',
+            },
+            { status: 409 }
+          )
+        }
+      }
+    }
 
     if (guestError || !guest) {
       return NextResponse.json({ error: 'Guest not found for this event' }, { status: 404 })
