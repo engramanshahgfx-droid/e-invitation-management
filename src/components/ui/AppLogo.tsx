@@ -13,7 +13,7 @@ interface AppLogoProps {
 }
 
 function AppLogo({
-  src = '/logo.png',
+  src = '/logo2.png',
   text,
   iconName = 'SparklesIcon',
   size = 64,

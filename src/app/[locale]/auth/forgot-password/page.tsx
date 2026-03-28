@@ -160,7 +160,7 @@ export default function ForgotPasswordPage() {
           <div className="flex h-24 items-center justify-between">
             <Link href={`/${locale}`} className="flex items-center">
               <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg">
-                <img src="/logo.png" alt="Marasim Logo" className="h-20 w-20 object-contain" />
+                <img src="/logo2.png" alt="Marasim Logo" className="h-20 w-20 object-contain" />
               </div>
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">

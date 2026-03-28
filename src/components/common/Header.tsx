@@ -140,7 +140,7 @@ const Header = ({ className = '' }: HeaderProps) => {
         <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
           <Link href={`/${locale}`} className="flex items-center">
             <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg">
-              <img src="/logo.png" alt="Marasim Logo" className="h-32 w-32 object-contain" />
+              <img src="/logo2.png" alt="Marasim Logo" className="h-32 w-32 object-contain" />
             </div>
           </Link>
 

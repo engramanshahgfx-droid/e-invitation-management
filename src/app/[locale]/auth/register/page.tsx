@@ -119,7 +119,7 @@ export default function RegisterPage() {
           <div className="flex h-20 items-center justify-between">
             <Link href={`/${locale}`} className="flex items-center">
               <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg">
-                <img src="/logo.png" alt="Marasim Logo" className="h-full w-full object-contain" />
+                <img src="/logo2.png" alt="Marasim Logo" className="h-full w-full object-contain" />
               </div>
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">

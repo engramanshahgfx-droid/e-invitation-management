@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   description: 'Manage events and send invitations with ease',
   metadataBase: new URL('https://marasim.digital/'),
   icons: {
-    icon: [{ url: '/logo.png', type: 'image/png' }],
-    shortcut: [{ url: '/logo.png', type: 'image/png' }],
-    apple: [{ url: '/logo.png', type: 'image/png' }],
+    icon: [{ url: '/logo2.png', type: 'image/png' }],
+    shortcut: [{ url: '/logo2.png', type: 'image/png' }],
+    apple: [{ url: '/logo2.png', type: 'image/png' }],
   },
 }
 

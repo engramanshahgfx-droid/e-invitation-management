@@ -189,7 +189,7 @@ export default function HomePage() {
             <div className="flex items-center">
               <Link href={`/${locale}`} className="flex items-center">
                 <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg">
-                  <img src="/logo.png" alt="Marasim Logo" className="h-20 w-20 object-contain" />
+                  <img src="/logo2.png" alt="Marasim Logo" className="h-20 w-20 object-contain" />
                 </div>
               </Link>
             </div>
@@ -404,7 +404,7 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 overflow-hidden">
-              <img src="/logo.png" alt="Marasim Logo" className="h-full w-full object-contain" />
+              <img src="/logo2.png" alt="Marasim Logo" className="h-full w-full object-contain" />
             </div>
             <span className="text-lg font-bold text-white">Marasim</span>
           </div>
