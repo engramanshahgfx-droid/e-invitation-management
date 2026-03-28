@@ -44,23 +44,22 @@ export class InvitationService {
     createdBy?: string
   ): Promise<CreatedInvitation> {
     try {
-      const rawCustomization: Partial<InvitationCustomization> =
-        (customization as Partial<InvitationCustomization>) || {}
-      const { data: invitationData_response, error } = await this.supabase
-        .from('invitation_templates')
+      const rawCustomization: Record<string, unknown> = (customization as any) || {}
+      const { data: invitationData_response, error } = await (this.supabase.from('invitation_templates') as any)
         .insert({
           event_id: eventId,
           template_id: templateId,
           customization: {
             ...rawCustomization,
-            primary_color: rawCustomization?.primary_color || null,
             secondary_color: rawCustomization?.secondary_color || null,
-            accent_color: rawCustomization?.accent_color || null,
-            font_family: rawCustomization?.font_family || 'sans-serif',
-            show_guest_count: rawCustomization?.show_guest_count ?? true,
-            show_dress_code: rawCustomization?.show_dress_code ?? true,
-            show_special_instructions: rawCustomization?.show_special_instructions ?? false,
-            language: rawCustomization?.language || 'en',
+            primary_color: (customization as any)?.primary_color || null,
+            secondary_color: (customization as any)?.secondary_color || null,
+            accent_color: (customization as any)?.accent_color || null,
+            font_family: (customization as any)?.font_family || 'sans-serif',
+            show_guest_count: (customization as any)?.show_guest_count ?? true,
+            show_dress_code: (customization as any)?.show_dress_code ?? true,
+            show_special_instructions: (customization as any)?.show_special_instructions ?? false,
+            language: (customization as any)?.language || 'en',
           },
           invitation_data: invitationData,
           created_by: createdBy || (await this.getCurrentUserId()) || '',
@@ -84,8 +83,7 @@ export class InvitationService {
    */
   static async getInvitation(invitationId: string): Promise<InvitationTemplate> {
     try {
-      const { data, error } = await this.supabase
-        .from('invitation_templates')
+      const { data, error } = await (this.supabase.from('invitation_templates') as any)
         .select('*')
         .eq('id', invitationId)
         .single()
@@ -106,8 +104,7 @@ export class InvitationService {
    */
   static async getEventInvitations(eventId: string): Promise<InvitationTemplate[]> {
     try {
-      const { data, error } = await this.supabase
-        .from('invitation_templates')
+      const { data, error } = await (this.supabase.from('invitation_templates') as any)
         .select('*')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false })
@@ -131,8 +128,7 @@ export class InvitationService {
     customization: Partial<InvitationCustomization>
   ): Promise<InvitationTemplate> {
     try {
-      const { data, error } = await this.supabase
-        .from('invitation_templates')
+      const { data, error } = await (this.supabase.from('invitation_templates') as any)
         .update({
           customization: {
             ...customization,
@@ -164,8 +160,7 @@ export class InvitationService {
       // First get the current data
       const current = await this.getInvitation(invitationId)
 
-      const { data, error } = await this.supabase
-        .from('invitation_templates')
+      const { data, error } = await (this.supabase.from('invitation_templates') as any)
         .update({
           invitation_data: {
             ...current.invitation_data,
@@ -192,7 +187,7 @@ export class InvitationService {
    */
   static async generateShareableLink(invitationId: string): Promise<string> {
     try {
-      const { data, error } = await supabase.rpc('generate_shareable_link', {
+      const { data, error } = await (this.supabase as any).rpc('generate_shareable_link', {
         invitation_id: invitationId,
       })
 
@@ -212,8 +207,7 @@ export class InvitationService {
    */
   static async getInvitationByLink(shareLink: string): Promise<InvitationTemplate> {
     try {
-      const { data, error } = await this.supabase
-        .from('invitation_templates')
+      const { data, error } = await (this.supabase.from('invitation_templates') as any)
         .select('*')
         .eq('shareable_link', shareLink)
         .single()
@@ -239,7 +233,7 @@ export class InvitationService {
     referrer?: string
   ): Promise<void> {
     try {
-      await supabase.rpc('track_invitation_view', {
+      await (this.supabase as any).rpc('track_invitation_view', {
         invitation_id: invitationId,
         p_viewer_ip: viewerIP || null,
         p_user_agent: userAgent || null,
@@ -256,8 +250,7 @@ export class InvitationService {
    */
   static async getInvitationAnalytics(invitationId: string) {
     try {
-      const { data: views, error } = await this.supabase
-        .from('invitation_views')
+      const { data: views, error } = await (this.supabase.from('invitation_views') as any)
         .select('*')
         .eq('invitation_template_id', invitationId)
         .order('viewed_at', { ascending: false })
@@ -281,7 +274,7 @@ export class InvitationService {
    */
   static async deleteInvitation(invitationId: string): Promise<void> {
     try {
-      const { error } = await this.supabase.from('invitation_templates').delete().eq('id', invitationId)
+      const { error } = await (this.supabase.from('invitation_templates') as any).delete().eq('id', invitationId)
 
       if (error) {
         throw new Error(`Failed to delete invitation: ${error.message}`)
@@ -301,8 +294,7 @@ export class InvitationService {
     customization?: Partial<InvitationCustomization>
   ): Promise<void> {
     try {
-      let { error } = await this.supabase
-        .from('events')
+      let { error } = await (this.supabase.from('events') as any)
         .update({
           template_id: templateId,
           template_customization: customization || {},
@@ -310,8 +302,7 @@ export class InvitationService {
         .eq('id', eventId)
 
       if (error && String(error.message || '').includes('template_id')) {
-        const fallback = await this.supabase
-          .from('events')
+        const fallback = await (this.supabase.from('events') as any)
           .update({
             template_customization: customization || {},
           })
@@ -336,14 +327,16 @@ export class InvitationService {
     eventId: string
   ): Promise<{ template_id: TemplateStyle; template_customization: InvitationCustomization }> {
     try {
-      let { data, error } = await this.supabase
-        .from('events')
+      let { data, error } = await (this.supabase.from('events') as any)
         .select('template_id, template_customization')
         .eq('id', eventId)
         .single()
 
       if (error && String(error.message || '').includes('template_id')) {
-        const fallback = await this.supabase.from('events').select('template_customization').eq('id', eventId).single()
+        const fallback = await (this.supabase.from('events') as any)
+          .select('template_customization')
+          .eq('id', eventId)
+          .single()
         data = fallback.data
         error = fallback.error
       }
