@@ -6,14 +6,14 @@ import supabase from '@/lib/supabase'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     invitationId: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { invitationId } = params
+    const { invitationId } = await params
 
     // Get invitation (no auth required for public view if shared link)
     const invitation = await InvitationService.getInvitation(invitationId)
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { invitationId } = params
+    const { invitationId } = await params
 
     // Get current user
     const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { invitationId } = params
+    const { invitationId } = await params
 
     // Get current user
     const { data: userData, error: userError } = await supabase.auth.getUser()

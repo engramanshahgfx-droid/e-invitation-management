@@ -6,14 +6,14 @@ import supabase from '@/lib/supabase'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     eventId: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { eventId } = params
+    const { eventId } = await params
 
     // Get current user
     const { data: userData, error: userError } = await supabase.auth.getUser()

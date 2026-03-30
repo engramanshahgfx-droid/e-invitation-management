@@ -7,9 +7,9 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     shareLink: string
-  }
+  }>
 }
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '')
@@ -66,7 +66,7 @@ async function resolveInvitationBankDetails(eventId: string) {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { shareLink } = params
+    const { shareLink } = await params
     const url = new URL(request.url)
     const guestId = url.searchParams.get('guestId') || url.searchParams.get('guest_id')
 
