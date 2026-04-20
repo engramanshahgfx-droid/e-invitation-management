@@ -20,6 +20,23 @@ const form = ref({
     guest_phone: '',
 });
 
+const getTemplateDraftForEvent = (eventId) => {
+    if (!eventId || typeof window === 'undefined') {
+        return null;
+    }
+
+    const raw = window.localStorage.getItem(`marasim_template_draft_${eventId}`);
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+};
+
 useEventQuerySync({ route, router, selectedEventId });
 
 const loadEvents = async () => {
@@ -51,9 +68,21 @@ const createInvitation = async () => {
     error.value = '';
     shareMessage.value = '';
     try {
-        const { data } = await api.post('/invitations', {
-            event_id: Number(selectedEventId.value),
+        const eventId = Number(selectedEventId.value);
+        const templateDraft = getTemplateDraftForEvent(eventId);
+        const payload = {
+            event_id: eventId,
             ...form.value,
+        };
+
+        if (templateDraft?.template_id) {
+            payload.template_id = templateDraft.template_id;
+            payload.template_data = JSON.stringify(templateDraft.template_data ?? {});
+            payload.template_customization = JSON.stringify(templateDraft.template_customization ?? {});
+        }
+
+        const { data } = await api.post('/invitations', {
+            ...payload,
         });
 
         const invitationData = data.data || {};

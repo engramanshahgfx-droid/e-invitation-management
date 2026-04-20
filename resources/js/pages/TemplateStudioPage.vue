@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../lib/api';
 import { getStoredUser } from '../lib/auth';
@@ -158,6 +158,63 @@ const previewFrameStyle = computed(() => ({
         : `linear-gradient(135deg, ${colors.value.background} 0%, #ffffff 78%)`,
 }));
 
+const draftStorageKey = computed(() => `marasim_template_draft_${selectedEventId.value || 'global'}`);
+
+function saveTemplateDraft() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const payload = {
+        template_id: activeTemplate.value,
+        template_data: {
+            ...form.value,
+        },
+        template_customization: {
+            colors: {
+                ...colors.value,
+            },
+        },
+        saved_at: new Date().toISOString(),
+    };
+
+    window.localStorage.setItem(draftStorageKey.value, JSON.stringify(payload));
+}
+
+function loadTemplateDraft() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const raw = window.localStorage.getItem(draftStorageKey.value);
+    if (!raw) {
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.template_id) {
+            activeTemplate.value = parsed.template_id;
+        }
+
+        if (parsed?.template_data && typeof parsed.template_data === 'object') {
+            form.value = {
+                ...form.value,
+                ...parsed.template_data,
+            };
+        }
+
+        if (parsed?.template_customization?.colors && typeof parsed.template_customization.colors === 'object') {
+            colors.value = {
+                ...colors.value,
+                ...parsed.template_customization.colors,
+            };
+        }
+    } catch {
+        // Ignore corrupt drafts and keep current editor state.
+    }
+}
+
 const detailCards = computed(() => [
     { label: content.value.date, value: formatDate(form.value.date) },
     { label: content.value.time, value: formatTime(form.value.time) },
@@ -249,7 +306,13 @@ async function openInvitations() {
     });
 }
 
-onMounted(prefillFromEvent);
+watch([activeTemplate, form, colors], saveTemplateDraft, { deep: true });
+
+onMounted(async () => {
+    await prefillFromEvent();
+    loadTemplateDraft();
+    saveTemplateDraft();
+});
 </script>
 
 <template>

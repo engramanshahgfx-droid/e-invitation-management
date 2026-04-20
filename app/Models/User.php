@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -19,6 +20,7 @@ use Filament\Panel;
     'email',
     'phone',
     'password',
+    'organization_id',
     'account_type',
     'subscription_status',
     'subscription_plan',
@@ -52,6 +54,11 @@ class User extends Authenticatable implements FilamentUser
     public function canManageEventFeatures(): bool
     {
         return $this->isAdmin() || $this->subscription_status === 'active';
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function events(): HasMany

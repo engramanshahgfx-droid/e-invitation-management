@@ -22,7 +22,7 @@ class InvitationDeliveryService
 
     public function sendWhatsApp(Invitation $invitation): array
     {
-        $invitation->loadMissing('event.user');
+        $invitation->loadMissing('event.user.organization');
         $phone = $this->phoneNumberService->normalize($invitation->guest_phone);
 
         if (! $phone) {
@@ -54,12 +54,17 @@ class InvitationDeliveryService
         $fromAddress = str_starts_with($from, 'whatsapp:') ? $from : 'whatsapp:'.$from;
         $publicUrl = $this->publicUrl($invitation);
         $organizerName = $invitation->event?->user?->name ?: 'Event Organizer';
-        $organizerPhone = $this->phoneNumberService->normalize($invitation->event?->user?->phone);
+        
+        // Use organization's WhatsApp number instead of user's phone
+        $organization = $invitation->event?->user?->organization;
+        $organizationPhone = $organization ? $this->phoneNumberService->normalize($organization->whatsapp_number) : null;
+        $organizationContact = $organization?->whatsapp_contact_name ?: $organizerName;
+        
         $messageBody = "Hello {$invitation->guest_name}, you're invited by {$organizerName}!\n"
             ."Open your invitation: {$publicUrl}\n";
 
-        if ($organizerPhone) {
-            $messageBody .= "Organizer WhatsApp: {$organizerPhone}\n";
+        if ($organizationPhone) {
+            $messageBody .= "Organizer WhatsApp: {$organizationPhone} ({$organizationContact})\n";
         }
 
         $messageBody .= 'Reply on the invitation page to confirm your attendance.';
@@ -67,6 +72,7 @@ class InvitationDeliveryService
         try {
             $response = Http::asForm()
                 ->withBasicAuth($accountSid, $authToken)
+                ->withoutVerifying()  // Disable SSL verification for local development
                 ->post("https://api.twilio.com/2010-04-01/Accounts/{$accountSid}/Messages.json", [
                     'From' => $fromAddress,
                     'To' => $to,
@@ -74,10 +80,23 @@ class InvitationDeliveryService
                 ]);
 
             if ($response->failed()) {
+                $twilioCode = (string) ($response->json('code') ?? '');
+                $httpStatus = $response->status();
+                $reason = 'twilio_api_error';
+
+                if ($httpStatus === 401 || $twilioCode === '20003') {
+                    $reason = 'twilio_auth_failed';
+                }
+
+                if ($twilioCode === '63007') {
+                    $reason = 'twilio_sender_not_ready';
+                }
+
                 Log::warning('Twilio WhatsApp invitation send failed.', [
                     'invitation_id' => $invitation->id,
                     'to' => $to,
-                    'status' => $response->status(),
+                    'status' => $httpStatus,
+                    'twilio_code' => $twilioCode,
                     'response' => $response->json(),
                 ]);
 
@@ -85,7 +104,7 @@ class InvitationDeliveryService
                     'attempted' => true,
                     'sent' => false,
                     'to' => $phone,
-                    'reason' => 'twilio_api_error',
+                    'reason' => $reason,
                     'status' => 'failed',
                 ]);
             }

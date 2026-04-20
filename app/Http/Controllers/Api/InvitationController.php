@@ -51,7 +51,10 @@ class InvitationController extends Controller
             'event_id' => ['required', 'exists:events,id'],
             'guest_name' => ['required', 'string', 'max:120'],
             'guest_email' => ['required', 'email', 'max:190'],
-            'guest_phone' => ['nullable', 'string', 'max:30'],
+            'guest_phone' => ['nullable', 'string', 'max:30', 'regex:/^(\+966|0)?[0-9]{7,12}$/'],
+            'template_id' => ['nullable', 'string'],
+            'template_data' => ['nullable', 'json'],
+            'template_customization' => ['nullable', 'json'],
         ]);
 
         $event = Event::findOrFail($validated['event_id']);
@@ -107,8 +110,11 @@ class InvitationController extends Controller
         $validated = $request->validate([
             'guest_name' => ['sometimes', 'string', 'max:120'],
             'guest_email' => ['sometimes', 'email', 'max:190'],
-            'guest_phone' => ['nullable', 'string', 'max:30'],
+            'guest_phone' => ['sometimes', 'nullable', 'string', 'max:30', 'regex:/^(\+966|0)?[0-9]{7,12}$/'],
             'status' => ['sometimes', 'in:pending,accepted,declined,attending'],
+            'template_id' => ['sometimes', 'string'],
+            'template_data' => ['sometimes', 'json'],
+            'template_customization' => ['sometimes', 'json'],
         ]);
 
         if (array_key_exists('status', $validated)) {

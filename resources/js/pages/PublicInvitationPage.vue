@@ -11,6 +11,49 @@ const status = ref('accepted');
 const done = ref(false);
 
 const code = computed(() => route.params.code);
+const template = computed(() => invitation.value?.template ?? {});
+const normalizeJsonObject = (value) => {
+    if (!value) {
+        return {};
+    }
+
+    if (typeof value === 'object') {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    return {};
+};
+
+const templateData = computed(() => normalizeJsonObject(template.value?.template_data));
+const templateCustomization = computed(() => normalizeJsonObject(template.value?.template_customization));
+const templateColors = computed(() => ({
+    primary: templateCustomization.value?.colors?.primary || '#0f172a',
+    secondary: templateCustomization.value?.colors?.secondary || '#f59e0b',
+    accent: templateCustomization.value?.colors?.accent || '#1e293b',
+    background: templateCustomization.value?.colors?.background || '#020617',
+}));
+
+const cardStyle = computed(() => ({
+    borderColor: `${templateColors.value.secondary}66`,
+    background: `linear-gradient(140deg, ${templateColors.value.background} 0%, #0b1220 100%)`,
+}));
+
+const titleText = computed(() => templateData.value.event_name || invitation.value?.event_title || 'Invitation');
+const guestText = computed(() => templateData.value.guest_name || invitation.value?.guest_name || 'Guest');
+const descriptionText = computed(() => templateData.value.description || invitation.value?.event_description || 'You are invited to celebrate this special event.');
+const hostText = computed(() => templateData.value.host_name || invitation.value?.organizer_name || 'Organizer');
+const venueText = computed(() => templateData.value.location || invitation.value?.event_location || 'Location TBA');
+const dateText = computed(() => templateData.value.date || invitation.value?.event_date || 'Date TBA');
+const timeText = computed(() => templateData.value.time || invitation.value?.event_time || '');
 
 const loadInvitation = async () => {
     loading.value = true;
@@ -45,17 +88,19 @@ onMounted(loadInvitation);
 
 <template>
     <main class="mx-auto max-w-2xl px-4 py-10">
-        <section class="rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+        <section class="rounded-2xl border p-6" :style="cardStyle">
             <p v-if="loading" class="text-sm text-slate-400">Loading invitation...</p>
             <p v-if="error" class="rounded-md border border-rose-900/50 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">{{ error }}</p>
 
             <div v-if="invitation && !loading" class="grid gap-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-amber-300">You're Invited</p>
-                <h1 class="text-2xl font-bold text-white">{{ invitation.event_title }}</h1>
-                <p class="text-sm text-slate-300">Guest: {{ invitation.guest_name }}</p>
-                <p class="text-sm text-slate-400">{{ invitation.event_date || 'Date TBA' }} {{ invitation.event_location ? `| ${invitation.event_location}` : '' }}</p>
+                <p class="text-xs uppercase tracking-[0.2em]" :style="{ color: templateColors.secondary }">You're Invited</p>
+                <h1 class="text-2xl font-bold text-white">{{ titleText }}</h1>
+                <p class="text-sm text-slate-300">Guest: {{ guestText }}</p>
+                <p class="text-sm text-slate-300">{{ descriptionText }}</p>
+                <p class="text-sm" :style="{ color: `${templateColors.secondary}` }">{{ dateText }} {{ venueText ? `| ${venueText}` : '' }} {{ timeText ? `| ${timeText}` : '' }}</p>
+                <p class="text-sm text-slate-400">Hosted by: {{ hostText }}</p>
                 <div class="rounded-xl border border-cyan-900/40 bg-cyan-950/20 px-4 py-3 text-sm text-cyan-100">
-                    <p class="font-semibold">Organizer WhatsApp</p>
+                    <p class="font-semibold">Organization WhatsApp</p>
                     <p class="mt-1">{{ invitation.organizer_name || 'Organizer' }}</p>
                     <p class="mt-1">{{ invitation.organizer_phone || 'Contact will be shared by the organizer.' }}</p>
                 </div>

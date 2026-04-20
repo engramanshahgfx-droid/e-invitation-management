@@ -26,6 +26,9 @@ class Invitation extends Model
         'delivery_sent_at',
         'last_shared_at',
         'responded_at',
+        'template_id',
+        'template_data',
+        'template_customization',
     ];
 
     protected function casts(): array
@@ -35,6 +38,8 @@ class Invitation extends Model
             'delivery_last_attempt_at' => 'datetime',
             'delivery_sent_at' => 'datetime',
             'last_shared_at' => 'datetime',
+            'template_data' => 'json',
+            'template_customization' => 'json',
         ];
     }
 

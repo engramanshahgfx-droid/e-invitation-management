@@ -11,7 +11,7 @@ class PublicInvitationController extends Controller
 {
     public function show(string $invitation_code): JsonResponse
     {
-        $invitation = Invitation::with('event.user:id,name,phone')
+        $invitation = Invitation::with('event.user.organization:id,name,whatsapp_number,whatsapp_contact_name')
             ->where('invitation_code', $invitation_code)
             ->first();
 
@@ -21,6 +21,8 @@ class PublicInvitationController extends Controller
                 'message' => 'Invitation not found.',
             ], 404);
         }
+
+        $organization = $invitation->event?->user?->organization;
 
         return response()->json([
             'success' => true,
@@ -35,8 +37,14 @@ class PublicInvitationController extends Controller
                 'event_time' => $invitation->event?->event_time,
                 'event_location' => $invitation->event?->location,
                 'event_description' => $invitation->event?->description,
-                'organizer_name' => $invitation->event?->user?->name,
-                'organizer_phone' => $invitation->event?->user?->phone,
+                'organizer_name' => $organization?->whatsapp_contact_name ?: $organization?->name ?: $invitation->event?->user?->name,
+                'organizer_phone' => $organization?->whatsapp_number ?: $invitation->event?->user?->phone,
+                'organization_name' => $organization?->name,
+                'template' => [
+                    'template_id' => $invitation->template_id,
+                    'template_data' => $invitation->template_data,
+                    'template_customization' => $invitation->template_customization,
+                ],
             ],
         ]);
     }
