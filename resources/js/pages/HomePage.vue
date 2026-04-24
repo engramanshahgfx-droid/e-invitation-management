@@ -6,7 +6,7 @@ import { getStoredUser } from '../lib/auth';
 
 const route = useRoute();
 const router = useRouter();
-const logoUrl = '/logo2.png';
+const logoUrl = '/public/logo2.png';
 
 const locale = computed(() => (route.params.locale === 'ar' ? 'ar' : 'en'));
 const isArabic = computed(() => locale.value === 'ar');
