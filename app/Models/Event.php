@@ -19,6 +19,9 @@ class Event extends Model
         'event_time',
         'location',
         'theme',
+        'template_id',
+        'template_data',
+        'template_customization',
         'status',
         'guest_count',
         'budget',
@@ -29,6 +32,8 @@ class Event extends Model
         return [
             'event_date' => 'date',
             'budget' => 'decimal:2',
+            'template_data' => 'json',
+            'template_customization' => 'json',
         ];
     }
 

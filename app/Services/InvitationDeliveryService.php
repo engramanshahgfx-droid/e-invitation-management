@@ -38,6 +38,7 @@ class InvitationDeliveryService
         $accountSid = (string) config('services.twilio.account_sid');
         $authToken = (string) config('services.twilio.auth_token');
         $from = (string) config('services.twilio.whatsapp_from');
+        $contentSid = trim((string) config('services.twilio.whatsapp_content_sid', ''));
         $fromLooksPlaceholder = str_contains(strtolower($from), 'your_approved_twilio_sender');
 
         if ($accountSid === '' || $authToken === '' || $from === '' || $fromLooksPlaceholder) {
@@ -69,15 +70,29 @@ class InvitationDeliveryService
 
         $messageBody .= 'Reply on the invitation page to confirm your attendance.';
 
+        $payload = [
+            'From' => $fromAddress,
+            'To' => $to,
+        ];
+
+        if ($contentSid !== '') {
+            $payload['ContentSid'] = $contentSid;
+            $payload['ContentVariables'] = json_encode([
+                '1' => $invitation->guest_name,
+                '2' => $organizerName,
+                '3' => $publicUrl,
+                '4' => $organizationPhone ?? '',
+                '5' => $organizationContact,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } else {
+            $payload['Body'] = $messageBody;
+        }
+
         try {
             $response = Http::asForm()
                 ->withBasicAuth($accountSid, $authToken)
                 ->withoutVerifying()  // Disable SSL verification for local development
-                ->post("https://api.twilio.com/2010-04-01/Accounts/{$accountSid}/Messages.json", [
-                    'From' => $fromAddress,
-                    'To' => $to,
-                    'Body' => $messageBody,
-                ]);
+                ->post("https://api.twilio.com/2010-04-01/Accounts/{$accountSid}/Messages.json", $payload);
 
             if ($response->failed()) {
                 $twilioCode = (string) ($response->json('code') ?? '');
@@ -92,40 +107,109 @@ class InvitationDeliveryService
                     $reason = 'twilio_sender_not_ready';
                 }
 
+                if ($twilioCode === '63016') {
+                    $reason = 'twilio_whatsapp_rejected_63016';
+                }
+
+                if ($twilioCode === '63027') {
+                    $reason = 'twilio_template_not_approved';
+                }
+
+                if ($twilioCode === '21654') {
+                    $reason = 'twilio_invalid_content_sid';
+                }
+
                 Log::warning('Twilio WhatsApp invitation send failed.', [
                     'invitation_id' => $invitation->id,
                     'to' => $to,
                     'status' => $httpStatus,
                     'twilio_code' => $twilioCode,
+                    'content_sid' => $contentSid !== '' ? $contentSid : null,
                     'response' => $response->json(),
                 ]);
 
                 return $this->recordResult($invitation, [
                     'attempted' => true,
                     'sent' => false,
+                    'submitted' => false,
                     'to' => $phone,
                     'reason' => $reason,
+                    'twilio_status' => is_string($response->json('status'))
+                        ? strtolower((string) $response->json('status'))
+                        : null,
+                    'twilio_code' => $twilioCode !== '' ? $twilioCode : null,
                     'status' => 'failed',
+                ]);
+            }
+
+            $twilioStatus = strtolower((string) ($response->json('status') ?? ''));
+            $twilioCode = (string) ($response->json('error_code') ?? $response->json('code') ?? '');
+            $messageId = $response->json('sid');
+
+            if ($twilioStatus === 'failed' || $twilioStatus === 'undelivered') {
+                $reason = $twilioCode === '63016'
+                    ? 'twilio_whatsapp_rejected_63016'
+                    : 'twilio_message_failed';
+
+                Log::warning('Twilio WhatsApp invitation rejected after acceptance.', [
+                    'invitation_id' => $invitation->id,
+                    'to' => $to,
+                    'twilio_status' => $twilioStatus,
+                    'twilio_code' => $twilioCode,
+                    'message_id' => $messageId,
+                    'response' => $response->json(),
+                ]);
+
+                return $this->recordResult($invitation, [
+                    'attempted' => true,
+                    'sent' => false,
+                    'submitted' => false,
+                    'to' => $phone,
+                    'message_id' => $messageId,
+                    'reason' => $reason,
+                    'twilio_status' => $twilioStatus,
+                    'twilio_code' => $twilioCode !== '' ? $twilioCode : null,
+                    'status' => 'failed',
+                ]);
+            }
+
+            // Twilio usually returns queued/accepted first; this means submitted, not guaranteed delivered.
+            if (in_array($twilioStatus, ['queued', 'accepted', 'scheduled'], true)) {
+                return $this->recordResult($invitation, [
+                    'attempted' => true,
+                    'sent' => false,
+                    'submitted' => true,
+                    'to' => $phone,
+                    'message_id' => $messageId,
+                    'reason' => null,
+                    'twilio_status' => $twilioStatus,
+                    'twilio_code' => $twilioCode !== '' ? $twilioCode : null,
+                    'status' => 'submitted',
                 ]);
             }
 
             return $this->recordResult($invitation, [
                 'attempted' => true,
                 'sent' => true,
+                'submitted' => false,
                 'to' => $phone,
-                'message_id' => $response->json('sid'),
+                'message_id' => $messageId,
+                'twilio_status' => $twilioStatus !== '' ? $twilioStatus : null,
+                'twilio_code' => $twilioCode !== '' ? $twilioCode : null,
                 'status' => 'sent',
             ]);
         } catch (\Throwable $exception) {
             Log::error('Twilio WhatsApp invitation exception.', [
                 'invitation_id' => $invitation->id,
                 'to' => $to,
+                'content_sid' => $contentSid !== '' ? $contentSid : null,
                 'error' => $exception->getMessage(),
             ]);
 
             return $this->recordResult($invitation, [
                 'attempted' => true,
                 'sent' => false,
+                'submitted' => false,
                 'to' => $phone,
                 'reason' => 'twilio_exception',
                 'status' => 'failed',

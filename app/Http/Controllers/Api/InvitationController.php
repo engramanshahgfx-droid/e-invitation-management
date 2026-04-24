@@ -65,9 +65,28 @@ class InvitationController extends Controller
 
         $this->ensureOrganizerPhoneConfigured($request);
 
+        $templateId = $validated['template_id'] ?? $event->template_id;
+        $templateData = $this->templateDataWithGuestName(
+            array_key_exists('template_data', $validated) ? $validated['template_data'] : $event->template_data,
+            $validated['guest_name']
+        );
+        $templateCustomization = $this->normalizeTemplateObject(
+            array_key_exists('template_customization', $validated) ? $validated['template_customization'] : $event->template_customization
+        );
+
+        if (! $templateId && $templateData === null && $templateCustomization === null) {
+            $templateId = null;
+        }
+
+        $invitationPayload = $validated;
+        unset($invitationPayload['template_id'], $invitationPayload['template_data'], $invitationPayload['template_customization']);
+
         $invitation = Invitation::create([
-            ...$validated,
+            ...$invitationPayload,
             'guest_phone' => $this->phoneNumberService->normalize($validated['guest_phone'] ?? null),
+            'template_id' => $templateId,
+            'template_data' => $templateData,
+            'template_customization' => $templateCustomization,
             'status' => 'pending',
             'invitation_code' => strtoupper(bin2hex(random_bytes(4))),
             'delivery_status' => 'not_sent',
@@ -190,6 +209,10 @@ class InvitationController extends Controller
         $resendExisting = (bool) ($validated['resend_existing'] ?? false);
         $guests = Guest::where('event_id', $event->id)->get();
 
+        $eventTemplateId = $event->template_id;
+        $eventTemplateData = $event->template_data;
+        $eventTemplateCustomization = $event->template_customization;
+
         $createdCount = 0;
         $sentCount = 0;
         $failedCount = 0;
@@ -205,6 +228,9 @@ class InvitationController extends Controller
                     'guest_name' => $guest->name,
                     'guest_email' => $guest->email,
                     'guest_phone' => $this->phoneNumberService->normalize($guest->phone),
+                    'template_id' => $eventTemplateId,
+                    'template_data' => $this->templateDataWithGuestName($eventTemplateData, $guest->name),
+                    'template_customization' => $this->normalizeTemplateObject($eventTemplateCustomization),
                     'status' => 'pending',
                     'invitation_code' => strtoupper(bin2hex(random_bytes(4))),
                     'delivery_status' => 'not_sent',
@@ -273,5 +299,33 @@ class InvitationController extends Controller
         throw ValidationException::withMessages([
             'phone' => ['Save a valid WhatsApp number on your profile before sending invitations.'],
         ]);
+    }
+
+    private function normalizeTemplateObject(mixed $value): ?array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
+    }
+
+    private function templateDataWithGuestName(mixed $value, string $guestName): ?array
+    {
+        $templateData = $this->normalizeTemplateObject($value) ?? [];
+
+        if ($guestName !== '') {
+            $templateData['guest_name'] = $guestName;
+        }
+
+        return $templateData === [] ? null : $templateData;
     }
 }

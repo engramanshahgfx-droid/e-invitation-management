@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../lib/api';
 import { getStoredUser } from '../lib/auth';
+import { getStoredEventId } from '../lib/eventFlow';
 
 const route = useRoute();
 const router = useRouter();
@@ -10,8 +11,26 @@ const router = useRouter();
 const locale = computed(() => (route.params.locale === 'ar' ? 'ar' : 'en'));
 const isArabic = computed(() => locale.value === 'ar');
 const textAlignClass = computed(() => (isArabic.value ? 'text-right' : 'text-left'));
-const selectedEventId = computed(() => String(route.query.event_id || ''));
+const selectedEventId = computed(() => String(route.query.event_id || getStoredEventId() || ''));
 const organizer = ref(getStoredUser());
+const templateSaving = ref(false);
+const templateSaveNotice = ref('');
+const templateSaveError = ref('');
+
+const normalizeJsonObject = (value) => {
+    if (!value) return {};
+    if (typeof value === 'object') return value;
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    return {};
+};
 
 const templates = [
     {
@@ -119,6 +138,12 @@ const content = computed(() => ({
     eventLink: isArabic.value ? 'مرتبط بالفعالية رقم' : 'Connected to event ID',
     fillSample: isArabic.value ? 'تحميل نموذج فاخر' : 'Load Premium Sample',
     applyPalette: isArabic.value ? 'تطبيق ألوان القالب' : 'Apply Template Palette',
+    saveTemplate: isArabic.value ? 'حفظ القالب' : 'Save Template',
+    saveAndOpenInvitations: isArabic.value ? 'احفظ وافتح الدعوات' : 'Save & Open Invitations',
+    savingTemplate: isArabic.value ? 'جارٍ الحفظ...' : 'Saving...',
+    templateSaved: isArabic.value ? 'تم حفظ القالب لهذه الفعالية. يمكن الآن إرسال نفس التصميم للضيوف.' : 'Template saved for this event. Guests will receive this exact design.',
+    saveRequiresEvent: isArabic.value ? 'اختر فعالية أولاً لحفظ القالب ومشاركته مع الضيوف.' : 'Select an event first to save this template for guest sending.',
+    saveFailed: isArabic.value ? 'تعذر حفظ القالب. حاول مرة أخرى.' : 'Failed to save template. Please try again.',
     back: isArabic.value ? 'العودة إلى الدعوات' : 'Back to Invitations',
     gallery: isArabic.value ? 'معرض الاتجاهات' : 'Style Gallery',
     galleryHint: isArabic.value ? 'كل بطاقة تمثل لغة تصميم مختلفة للدعوات العامة، الخاصة، أو المؤسسية.' : 'Each card represents a distinct design language for social, premium, and corporate invitations.',
@@ -166,6 +191,7 @@ function saveTemplateDraft() {
     }
 
     const payload = {
+        event_id: selectedEventId.value || null,
         template_id: activeTemplate.value,
         template_data: {
             ...form.value,
@@ -186,18 +212,40 @@ function loadTemplateDraft() {
         return;
     }
 
-    const raw = window.localStorage.getItem(draftStorageKey.value);
-    if (!raw) {
+    const rawEvent = window.localStorage.getItem(draftStorageKey.value);
+    const rawGlobal = window.localStorage.getItem('marasim_template_draft_global');
+
+    let parsed = null;
+    if (rawEvent) {
+        try {
+            parsed = JSON.parse(rawEvent);
+        } catch {
+            parsed = null;
+        }
+    }
+
+    if (!parsed && rawGlobal) {
+        try {
+            parsed = JSON.parse(rawGlobal);
+        } catch {
+            parsed = null;
+        }
+    }
+
+    if (!parsed) {
         return;
     }
 
     try {
-        const parsed = JSON.parse(raw);
         if (parsed?.template_id) {
             activeTemplate.value = parsed.template_id;
         }
 
-        if (parsed?.template_data && typeof parsed.template_data === 'object') {
+        const canUseTemplateData = !selectedEventId.value
+            || !parsed?.event_id
+            || String(parsed.event_id) === String(selectedEventId.value);
+
+        if (canUseTemplateData && parsed?.template_data && typeof parsed.template_data === 'object') {
             form.value = {
                 ...form.value,
                 ...parsed.template_data,
@@ -262,6 +310,20 @@ function selectTemplate(templateId) {
     applyTemplatePalette(templateId);
 }
 
+function currentTemplatePayload() {
+    return {
+        template_id: activeTemplate.value,
+        template_data: {
+            ...form.value,
+        },
+        template_customization: {
+            colors: {
+                ...colors.value,
+            },
+        },
+    };
+}
+
 const prefillFromEvent = async () => {
     if (!selectedEventId.value) {
         return;
@@ -280,6 +342,28 @@ const prefillFromEvent = async () => {
         form.value.time = event.event_time || form.value.time;
         form.value.location = event.location || form.value.location;
         form.value.description = event.description || form.value.description;
+
+        if (event.template_id) {
+            activeTemplate.value = event.template_id;
+            applyTemplatePalette(event.template_id);
+        }
+
+        const eventTemplateData = normalizeJsonObject(event.template_data);
+        if (Object.keys(eventTemplateData).length > 0) {
+            form.value = {
+                ...form.value,
+                ...eventTemplateData,
+            };
+        }
+
+        const eventTemplateCustomization = normalizeJsonObject(event.template_customization);
+        const eventTemplateColors = normalizeJsonObject(eventTemplateCustomization.colors);
+        if (Object.keys(eventTemplateColors).length > 0) {
+            colors.value = {
+                ...colors.value,
+                ...eventTemplateColors,
+            };
+        }
     } catch {
         // Keep manual values when event prefill fails.
     }
@@ -299,11 +383,37 @@ function quickFillSample() {
 }
 
 async function openInvitations() {
+    if (selectedEventId.value) {
+        await saveTemplateToEvent();
+    }
+
     await router.push({
         name: 'invitations',
         params: { locale: locale.value },
         query: route.query,
     });
+}
+
+async function saveTemplateToEvent() {
+    templateSaveNotice.value = '';
+    templateSaveError.value = '';
+
+    if (!selectedEventId.value) {
+        templateSaveError.value = content.value.saveRequiresEvent;
+        return;
+    }
+
+    templateSaving.value = true;
+
+    try {
+        await api.patch(`/events/${selectedEventId.value}`, currentTemplatePayload());
+        templateSaveNotice.value = content.value.templateSaved;
+        saveTemplateDraft();
+    } catch {
+        templateSaveError.value = content.value.saveFailed;
+    } finally {
+        templateSaving.value = false;
+    }
 }
 
 watch([activeTemplate, form, colors], saveTemplateDraft, { deep: true });
@@ -334,9 +444,13 @@ onMounted(async () => {
                     <div class="flex flex-wrap gap-2">
                         <button class="rounded-xl border border-slate-600 bg-slate-900/60 px-4 py-2 text-sm text-slate-100 hover:bg-slate-800" type="button" @click="quickFillSample">{{ content.fillSample }}</button>
                         <button class="rounded-xl border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/20" type="button" @click="applyTemplatePalette()">{{ content.applyPalette }}</button>
-                        <button class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200" type="button" @click="openInvitations">{{ content.back }}</button>
+                        <button class="rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-60" type="button" :disabled="templateSaving" @click="saveTemplateToEvent">{{ templateSaving ? content.savingTemplate : content.saveTemplate }}</button>
+                        <button class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:opacity-60" type="button" :disabled="templateSaving" @click="openInvitations">{{ templateSaving ? content.savingTemplate : content.saveAndOpenInvitations }}</button>
                     </div>
                 </div>
+
+                <p v-if="templateSaveNotice" class="relative z-10 mt-4 rounded-xl border border-emerald-800/40 bg-emerald-950/40 px-4 py-2 text-sm text-emerald-200">{{ templateSaveNotice }}</p>
+                <p v-if="templateSaveError" class="relative z-10 mt-3 rounded-xl border border-rose-800/40 bg-rose-950/40 px-4 py-2 text-sm text-rose-200">{{ templateSaveError }}</p>
             </div>
         </article>
 
