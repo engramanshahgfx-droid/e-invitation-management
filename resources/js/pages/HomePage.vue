@@ -126,6 +126,7 @@ const content = computed(() => ({
     navFeatures: isArabic.value ? 'المميزات' : 'Features',
     navHowItWorks: isArabic.value ? 'كيف يعمل' : 'How it Works',
     navPricing: isArabic.value ? 'الأسعار' : 'Pricing',
+    navAboutUs: isArabic.value ? 'من نحن' : 'About Us',
     signIn: isArabic.value ? 'تسجيل الدخول' : 'Sign In',
     createInvitation: isArabic.value ? 'إنشاء دعوة' : 'Create Invitation',
     heroBadge: isArabic.value ? 'ابدأ مجانًا، بدون بطاقة ائتمان' : 'Start Free — No Credit Card Required',
@@ -148,6 +149,86 @@ const content = computed(() => ({
         : 'Powerful tools to manage your events from start to finish',
     pricingTitle: isArabic.value ? 'أسعار بسيطة وواضحة' : 'Simple, Transparent Pricing',
     pricingDescription: isArabic.value ? 'ابدأ مجانًا وقم بالترقية عندما تكون جاهزًا' : "Start free, upgrade when you're ready",
+    aboutUsTitle: isArabic.value ? 'من نحن' : 'About Us',
+    aboutUsContent: isArabic.value ? `مرحبًا بكم في مراسم واتيكية، المنصة الرقمية الرائدة والمتخصصة في إدارة الدعوات والمناسبات والحملات التسويقية. نحن لا نقدم مجرد منصة إلكترونية، بل نصمم تجربة رقمية متكاملة تجمع بين أصالة الضيافة، دقة التنظيم، وأحدث الحلول التقنية لتمنح الأفراد والشركات وسيلة احترافية وسلسة للتواصل مع جمهورهم بأسلوب عصري يواكب التحول الرقمي.
+
+في مراسم واتيكية، نؤمن بأن كل مناسبة هي قصة تحمل قيمة ورسالة تستحق أن تُروى بأعلى معايير الدقة والجمال. لذا، طوّرنا نظامًا ذكيًا يساعدكم على تحويل أفكاركم إلى واقع ملموس، بدءًا من إدارة الدعوات الإلكترونية وصولاً إلى إطلاق الحملات التسويقية ونشر البروشورات الرقمية، مما يضمن لكم كفاءة التنفيذ وتوفير الوقت.
+
+رؤيتنا
+أن نكون الوجهة الأولى والمنصة المنصة الرائدة في التحول الرقمي لإدارة المناسبات والتسويق الإلكتروني، عبر تقديم حلول مبتكرة تجمع بين الأناقة، سهولة الاستخدام، وكفاءة الأداء.
+
+رسالتنا
+تقديم خدمات رقمية متطورة تُمكّن الأفراد والجهات التجارية من إدارة فعالياتهم وحملاتهم بمرونة واحترافية عالية، من خلال تجربة استخدام حديثة تعكس هوية كل عميل وتضمن إيصال رسالته بأفضل صورة ممكنة.
+
+خدماتنا المتكاملة
+نوفر لكم بيئة رقمية ذكية تمنحكم التحكم الكامل في تفاصيل فعالياتكم:
+
+إدارة الدعوات الذكية: حلول متطورة لإنشاء وإرسال وتتبع الدعوات الإلكترونية وتنظيم حضور الضيوف بطريقة راقية ومنظمة.
+
+تنظيم المناسبات والفعاليات: أدوات احترافية لإدارة الحشود واللوجستيات لضمان سير الفعالية بسلاسة من البداية وحتى الختام.
+
+الحملات التسويقية ونشر البروشورات: منصة دعائية قوية تتيح لكم توزيع البروشورات الرقمية والوصول إلى الجمهور المستهدف بدقة وكفاءة عالية.
+
+صفحات المناسبات والمؤتمرات: تصميم واجهات احترافية مخصصة تتضمن كافة تفاصيل الفعالية وتسمح بالتفاعل المباشر مع الحضور.
+
+متابعة التفاعل والإحصائيات: تقارير وتحليلات دقيقة لقياس مستوى الوصول وتحسين أداء الحملات والفعاليات.
+
+لماذا "مراسم واتيكية"؟
+الاحترافية الرقمية: تصاميم عصرية واحترافية تضمن تجربة مستخدم سهلة وسريعة.
+
+الدقة في التنظيم: نولي اهتماماً بالغاً بأدق التفاصيل، لإماننا بأن النجاح يكمن في إتقان الصغائر.
+
+حلول مرنة ومبتكرة: تقنيات حديثة تضمن الاستقرار والأداء العالي، وتناسب مختلف أنواع المناسبات (اجتماعية، تجارية، أو رسمية).
+
+سرعة الإعداد والنشر: نمنحكم القدرة على إطلاق مناسباتكم وحملاتكم في وقت قياسي وبجودة استثنائية.
+
+قيمنا
+الابتكار: نسابق الزمن لتقديم أحدث الأدوات التقنية في عالم الفعاليات والتسويق.
+
+الموثوقية: نلتزم بأعلى معايير الأمان، السرية، والخصوصية في إدارة بياناتكم وضيوفكم.
+
+الشراكة: نعمل كشريك استراتيجي يسعى دائماً لتعزيز حضوركم وتحقيق أهدافكم التسويقية والاجتماعية.
+
+مراسم واتيكية.. تجربة رقمية متكاملة تساعدك على التألق.` : `Welcome to Marasim Watikiya, the leading digital platform specialized in managing invitations, events, and marketing campaigns. We do not just provide an electronic platform, but we design a comprehensive digital experience that combines the authenticity of hospitality, organizational precision, and the latest technological solutions to give individuals and companies a professional and smooth way to communicate with their audience in a modern style that keeps pace with digital transformation.
+
+At Marasim Watikiya, we believe that every occasion is a story that carries value and a message that deserves to be told with the highest standards of accuracy and beauty. Therefore, we have developed an intelligent system that helps you transform your ideas into tangible reality, starting from managing electronic invitations up to launching marketing campaigns and distributing digital brochures, ensuring execution efficiency and time saving.
+
+Our Vision
+To be the first destination and the leading platform in the digital transformation for event management and electronic marketing, by providing innovative solutions that combine elegance, ease of use, and performance efficiency.
+
+Our Mission
+Providing advanced digital services that enable individuals and commercial entities to manage their events and campaigns with high flexibility and professionalism, through a modern user experience that reflects each client's identity and ensures delivering their message in the best possible way.
+
+Our Integrated Services
+We provide you with a smart digital environment that gives you full control over the details of your events:
+
+Smart Invitation Management: Advanced solutions for creating, sending, and tracking electronic invitations and organizing guest attendance in an elegant and organized manner.
+
+Event and Activity Organization: Professional tools for crowd and logistics management to ensure the smooth running of the event from beginning to end.
+
+Marketing Campaigns and Brochure Distribution: A strong promotional platform that allows you to distribute digital brochures and reach the target audience with high precision and efficiency.
+
+Event and Conference Pages: Professional design of interfaces customized to include all event details and allow direct interaction with attendees.
+
+Interaction Tracking and Statistics: Accurate reports and analyzes to measure reach level and improve campaign and event performance.
+
+Why 'Marasim Watikiya'?
+Digital Professionalism: Modern and professional designs that ensure an easy and fast user experience.
+
+Organizational Precision: We pay great attention to the smallest details, believing that success lies in mastering the small things.
+
+Flexible and Innovative Solutions: Modern technologies that ensure stability and high performance, and suit different types of occasions (social, commercial, or official).
+
+Speed of Setup and Launch: We give you the ability to launch your events and campaigns in record time and exceptional quality.
+
+Our Values
+Innovation: We race against time to provide the latest technological tools in the world of events and marketing.
+
+Reliability: We are committed to the highest standards of security, confidentiality, and privacy in managing your and your guests' data.
+
+Partnership: We work as a strategic partner always seeking to enhance your presence and achieve your marketing and social goals.
+
+Marasim Watikiya.. A comprehensive digital experience that helps you shine.`,
     mostPopular: isArabic.value ? 'الأكثر شيوعًا' : 'MOST POPULAR',
     getStarted: isArabic.value ? 'ابدأ الآن' : 'Get Started',
     ctaTitle: isArabic.value ? 'جاهز لتبسيط إدارة فعالياتك؟' : 'Ready to Simplify Your Event Management?',
@@ -180,6 +261,7 @@ onMounted(() => {
                     <a class="text-sm text-gray-600 hover:text-gray-900" href="#features">{{ content.navFeatures }}</a>
                     <a class="text-sm text-gray-600 hover:text-gray-900" href="#how-it-works">{{ content.navHowItWorks }}</a>
                     <a class="text-sm text-gray-600 hover:text-gray-900" href="#pricing">{{ content.navPricing }}</a>
+                    <a class="text-sm text-gray-600 hover:text-gray-900" href="#about-us">{{ content.navAboutUs }}</a>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -305,6 +387,15 @@ onMounted(() => {
             </div>
         </section>
 
+        <section id="about-us" class="bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-4xl">
+                <div class="text-center">
+                    <h2 class="mb-8 text-3xl font-bold text-gray-900">{{ content.aboutUsTitle }}</h2>
+                    <div class="text-left text-gray-700 leading-relaxed whitespace-pre-line">{{ content.aboutUsContent }}</div>
+                </div>
+            </div>
+        </section>
+
         <section class="px-4 py-20 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-3xl text-center">
                 <h2 class="mb-4 text-3xl font-bold text-gray-900">{{ content.ctaTitle }}</h2>
@@ -322,7 +413,7 @@ onMounted(() => {
                     <div class="h-8 w-8 overflow-hidden">
                         <img :src="logoUrl" alt="Marasim Logo" class="h-full w-full object-contain">
                     </div>
-                    <span class="text-lg font-bold">Marasim</span>
+                    <span class="text-lg font-bold">{{ isArabic ? 'مراسم واتيكية' : 'Marasim' }}</span>
                 </div>
                 <p class="text-sm text-slate-300">© {{ new Date().getFullYear() }} Marasim. {{ content.footerRights }}</p>
             </div>
